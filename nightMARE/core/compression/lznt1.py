@@ -32,14 +32,10 @@ import struct
 from io import BytesIO
 
 
-class Lznt1:
-    def decompress(self, buf: bytes) -> bytes:
-        return decompress_data(buf)
-
-    __call__ = decompress
-
-
-lznt1 = Lznt1()
+COMPRESSED_MASK = 1 << 15
+SIGNATURE_MASK = 3 << 12
+SIZE_MASK = (1 << 12) - 1
+TAG_MASKS = [(1 << i) for i in range(0, 8)]
 
 
 def get_displacement(offset: int) -> int:
@@ -54,13 +50,8 @@ def get_displacement(offset: int) -> int:
 
 DISPLACEMENT_TABLE = array.array("B", [get_displacement(x) for x in range(8192)])
 
-COMPRESSED_MASK = 1 << 15
-SIGNATURE_MASK = 3 << 12
-SIZE_MASK = (1 << 12) - 1
-TAG_MASKS = [(1 << i) for i in range(0, 8)]
 
-
-def decompress_data(cdata: bytes) -> bytes:
+def decompress(cdata: bytes) -> bytes:
     """Decompresses the data."""
 
     in_fd = BytesIO(cdata)

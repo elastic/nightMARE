@@ -124,18 +124,22 @@ class WindowsEmulator(object):
     @ip.setter
     def ip(self, x: int) -> None:
         self.unicorn.reg_write(
-            unicorn.x86_const.UC_X86_REG_EIP
-            if self.__is_x86
-            else unicorn.x86_const.UC_X86_REG_RIP,
+            (
+                unicorn.x86_const.UC_X86_REG_EIP
+                if self.__is_x86
+                else unicorn.x86_const.UC_X86_REG_RIP
+            ),
             x,
         )
 
     @sp.setter
     def sp(self, x: int) -> None:
         self.unicorn.reg_write(
-            unicorn.x86_const.UC_X86_REG_ESP
-            if self.__is_x86
-            else unicorn.x86_const.UC_X86_REG_RSP,
+            (
+                unicorn.x86_const.UC_X86_REG_ESP
+                if self.__is_x86
+                else unicorn.x86_const.UC_X86_REG_RSP
+            ),
             x,
         )
 

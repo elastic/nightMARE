@@ -2,6 +2,10 @@
 
 import ctypes
 import typing
+import platform
+
+if platform.system() != "Windows":
+    raise RuntimeError("This module can only be imported on Windows platform")
 
 MEM_COMMIT = 0x1000
 MEM_RESERVE = 0x2000
