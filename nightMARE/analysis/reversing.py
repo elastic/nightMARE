@@ -41,9 +41,20 @@ class Radare2:
 
         self.radare = r2pipe.open(str(self.__binary_path))
         self.file_info = self.radare.cmdj("ij")
+        self.is_analyzed = False
 
     def disassemble(self, offset: int, size: int) -> list[dict[str, typing.Any]]:
-        return self.radare.cmdj(f"pdj {size} @{offset}")
+        return self.radare.cmdj(f"aoj {size} @{offset}")
+
+    def dissasemble_previous_instruction(
+        self, offset: int
+    ) -> list[dict[str, typing.Any]]:
+        return self.disassemble(self.get_previous_instruction_offset(offset), 1)
+
+    def do_analysis(self) -> None:
+        if not self.is_analyzed:
+            self.radare.cmd("aaa")
+        self.is_analyzed = True
 
     def get_data(self, offset: int, size: int | None = None) -> bytes:
         if not size:
@@ -58,17 +69,36 @@ class Radare2:
 
         return bytes(self.radare.cmdj(f"pxj {size} @{offset}"))
 
-    def get_u8(self, offset: int) -> int:
-        return cast.u8(self.get_data(offset, 1))
+    def find_pattern(
+        self, pattern: str, pattern_type: Radare2.PatternType
+    ) -> typing.Iterable[int]:
+        match pattern_type:
+            case Radare2.PatternType.STRING_PATTERN:
+                return self.radare.cmdj(f"/j {pattern}")
+            case Radare2.PatternType.WIDE_STRING_PATTERN:
+                return self.radare.cmdj(f"/wj {pattern}")
+            case Radare2.PatternType.HEX_PATTERN:
+                return self.radare.cmdj(f"/xj {pattern.replace('?', '.')}")
 
-    def get_16(self, offset: int) -> int:
-        return cast.u16(self.get_data(offset, 2))
+    def get_function_start_offset(self, offset: int) -> int:
+        self.do_analysis()
+        return self.radare.cmdj(f"afoj @ {offset}")["address"]
 
-    def get_u32(self, offset: int) -> int:
-        return cast.u32(self.get_data(offset, 4))
+    def get_previous_instruction_offset(self, offset: int) -> int:
+        self.radare.cmd(f"s {offset}")
+        return self.radare.cmdj("pdj -1")[0]["offset"]
 
-    def get_u64(self, offset: int) -> int:
-        return cast.u64(self.get_data(offset, 8))
+    def get_section(self, name: str) -> bytes:
+        rsrc_info = self.get_section_info(name)
+        return self.get_data(rsrc_info["vaddr"], rsrc_info["vsize"])
+
+    def get_section_info(self, name: str) -> dict[str, typing.Any] | None:
+        sections = self.radare.cmdj(f"iSj")
+        for s in sections:
+            if s["name"] == name:
+                return s
+        else:
+            return None
 
     def get_section_info_from_va(
         self, virtual_address: int
@@ -82,28 +112,20 @@ class Radare2:
                 return section_info
         return None
 
-    def get_section_info(self, name: str) -> dict[str, typing.Any] | None:
-        sections = self.radare.cmdj(f"iSj")
-        for s in sections:
-            if s["name"] == name:
-                return s
-        else:
-            return None
+    def get_string(self, offset: int) -> bytes:
+        return bytes(self.radare.cmdj(f"psj @ {offset}")["string"], "utf-8")
 
-    def get_section(self, name: str) -> bytes:
-        rsrc_info = self.get_section_info(name)
-        return self.get_data(rsrc_info["vaddr"], rsrc_info["vsize"])
+    def get_u8(self, offset: int) -> int:
+        return cast.u8(self.get_data(offset, 1))
 
-    def find_pattern(
-        self, pattern: str, pattern_type: Radare2.PatternType
-    ) -> typing.Iterable[int]:
-        match pattern_type:
-            case Radare2.PatternType.STRING_PATTERN:
-                return self.radare.cmdj(f"/j {pattern}")
-            case Radare2.PatternType.WIDE_STRING_PATTERN:
-                return self.radare.cmdj(f"/wj {pattern}")
-            case Radare2.PatternType.HEX_PATTERN:
-                return self.radare.cmdj(f"/xj {pattern.replace('?', '.')}")
+    def get_16(self, offset: int) -> int:
+        return cast.u16(self.get_data(offset, 2))
+
+    def get_u32(self, offset: int) -> int:
+        return cast.u32(self.get_data(offset, 4))
+
+    def get_u64(self, offset: int) -> int:
+        return cast.u64(self.get_data(offset, 8))
 
     def __del__(self):
         self.radare.cmd("o--")

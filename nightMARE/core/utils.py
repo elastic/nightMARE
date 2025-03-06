@@ -4,23 +4,14 @@ import pathlib
 import typing
 import requests
 import lief
-import re
 import yara
 
 from nightMARE.core import cast
+from nightMARE.core import common_regex
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
 }
-
-URL_REGEX = re.compile(
-    rb"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)"
-)
-BRACKET_RE = re.compile(r"(\w+)\[(\d+)\]")
-PRINTABLE_STRING_REGEX = re.compile(rb"[\x20-\x7E]{4,}")
-BASE64_REGEX = re.compile(
-    rb"^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$"
-)
 
 
 def __download_aux(
@@ -87,20 +78,6 @@ def get_section_content(pe: lief.PE.Binary, section_name: str) -> None | bytes:
         return None
 
 
-def resolve_key_chain(j: dict[str, typing.Any], key_chain: str) -> typing.Any:
-    o: typing.Any = j
-
-    try:
-        for key in key_chain.split("."):
-            if m := BRACKET_RE.match(key):
-                o = o[m.group(1)][int(m.group(2), 10)]
-            else:
-                o = o[key]
-        return o
-    except Exception:
-        return None
-
-
 def map_files_directory(
     path: pathlib.Path, function: typing.Callable[[pathlib.Path], typing.Any]
 ) -> list[tuple[pathlib.Path, typing.Any]]:
@@ -128,11 +105,11 @@ def write_files(directory: pathlib.Path, files: dict[str, bytes]) -> None:
 
 
 def is_base64(s: bytes) -> bool:
-    return bool(BASE64_REGEX.fullmatch(s))
+    return bool(common_regex.BASE64_REGEX.fullmatch(s))
 
 
 def is_url(s: bytes) -> bool:
-    return bool(URL_REGEX.fullmatch(s))
+    return bool(common_regex.URL_REGEX.fullmatch(s))
 
 
 def find_strings(section_data: bytes) -> list[bytes]:
@@ -141,7 +118,7 @@ def find_strings(section_data: bytes) -> list[bytes]:
     The strings are picked based on regular expression for printable characters
     """
     all_strings = []
-    for match in PRINTABLE_STRING_REGEX.findall(section_data):
+    for match in common_regex.PRINTABLE_STRING_REGEX.findall(section_data):
         all_strings.append(match)
 
     return all_strings
