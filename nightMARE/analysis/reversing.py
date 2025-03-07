@@ -84,9 +84,23 @@ class Radare2:
         self.do_analysis()
         return self.radare.cmdj(f"afoj @ {offset}")["address"]
 
+    def get_function_end_offset(self, offset: int) -> int:
+        self.do_analysis()
+        function_info = self.radare.cmdj(f"afij @ {offset}")
+        return function_info[0]["offset"] + function_info[0]["size"]
+
+    def get_basic_block_end_offset(self, offset: int) -> int:
+        self.do_analysis()
+        basicblock_info = self.radare.cmdj(f"afbj. @ {offset}")
+        return basicblock_info[0]["addr"] + basicblock_info[0]["size"]
+
     def get_previous_instruction_offset(self, offset: int) -> int:
         self.radare.cmd(f"s {offset}")
         return self.radare.cmdj("pdj -1")[0]["offset"]
+
+    def get_next_instruction_offset(self, offset: int) -> int:
+        self.radare.cmd(f"s {offset}")
+        return self.radare.cmdj("pdj 2")[1]["offset"]
 
     def get_section(self, name: str) -> bytes:
         rsrc_info = self.get_section_info(name)
@@ -118,7 +132,7 @@ class Radare2:
     def get_u8(self, offset: int) -> int:
         return cast.u8(self.get_data(offset, 1))
 
-    def get_16(self, offset: int) -> int:
+    def get_u16(self, offset: int) -> int:
         return cast.u16(self.get_data(offset, 2))
 
     def get_u32(self, offset: int) -> int:
