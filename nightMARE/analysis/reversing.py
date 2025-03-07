@@ -46,10 +46,13 @@ class Radare2:
     def disassemble(self, offset: int, size: int) -> list[dict[str, typing.Any]]:
         return self.radare.cmdj(f"aoj {size} @{offset}")
 
-    def dissasemble_previous_instruction(
+    def disassemble_previous_instruction(
         self, offset: int
     ) -> list[dict[str, typing.Any]]:
         return self.disassemble(self.get_previous_instruction_offset(offset), 1)
+
+    def disassemble_next_instruction(self, offset: int) -> list[dict[str, typing.Any]]:
+        return self.disassemble(self.get_next_instruction_offset(offset), 1)
 
     def do_analysis(self) -> None:
         if not self.is_analyzed:
@@ -95,12 +98,14 @@ class Radare2:
         return basicblock_info[0]["addr"] + basicblock_info[0]["size"]
 
     def get_previous_instruction_offset(self, offset: int) -> int:
-        self.radare.cmd(f"s {offset}")
-        return self.radare.cmdj("pdj -1")[0]["offset"]
+        return self.radare.cmdj(f"pdj -1 @ {offset}")[0]["offset"]
 
     def get_next_instruction_offset(self, offset: int) -> int:
-        self.radare.cmd(f"s {offset}")
-        return self.radare.cmdj("pdj 2")[1]["offset"]
+        return self.radare.cmdj(f"pdj 2 @ {offset}")[1]["offset"]
+
+    def get_references_to(self, offset: int) -> list:
+        references_info = self.radare.cmdj(f"axtj @ {offset}")
+        return [entry["from"] for entry in references_info]
 
     def get_section(self, name: str) -> bytes:
         rsrc_info = self.get_section_info(name)
