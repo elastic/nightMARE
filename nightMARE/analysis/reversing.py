@@ -132,6 +132,9 @@ class Radare2:
     def get_string(self, offset: int) -> bytes:
         return bytes(self.radare.cmdj(f"psj @ {offset}")["string"], "utf-8")
 
+    def get_strings_info_data_sections(self) -> list[dict[str, typing.Any]]:
+        return self.radare.cmdj("izj")
+
     def get_u8(self, offset: int) -> int:
         return cast.u8(self.get_data(offset, 1))
 
