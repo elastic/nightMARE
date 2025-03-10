@@ -12,7 +12,7 @@ import r2pipe
 
 from nightMARE.core import cast
 
-R2_CACHE: dict[str, Radare2] = dict()
+R2_CACHE: dict[str, Radare2] = {}
 
 
 class Radare2:
