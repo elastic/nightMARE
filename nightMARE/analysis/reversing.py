@@ -46,13 +46,11 @@ class Radare2:
     def disassemble(self, offset: int, size: int) -> list[dict[str, typing.Any]]:
         return self.radare.cmdj(f"aoj {size} @{offset}")
 
-    def disassemble_previous_instruction(
-        self, offset: int
-    ) -> list[dict[str, typing.Any]]:
-        return self.disassemble(self.get_previous_instruction_offset(offset), 1)
+    def disassemble_previous_instruction(self, offset: int) -> dict[str, typing.Any]:
+        return self.disassemble(self.get_previous_instruction_offset(offset), 1)[0]
 
-    def disassemble_next_instruction(self, offset: int) -> list[dict[str, typing.Any]]:
-        return self.disassemble(self.get_next_instruction_offset(offset), 1)
+    def disassemble_next_instruction(self, offset: int) -> dict[str, typing.Any]:
+        return self.disassemble(self.get_next_instruction_offset(offset), 1)[0]
 
     def do_analysis(self) -> None:
         if not self.is_analyzed:
