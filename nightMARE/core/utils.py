@@ -16,12 +16,12 @@ def convert_bytes_to_base64_in_dict(
     data: dict[str, typing.Any],
 ) -> dict[str, typing.Any]:
     """
-    Recursively convert bytes value(s) to base64 in a dictionary.
+    Recursively converts bytes values to base64 strings within a dictionary.
 
-    :param data: The dictionary to convert.
-    :return: The converted dictionary.
+    :param data: The dictionary containing values to convert
+    :return: The dictionary with bytes values converted to base64 strings
+    :raise: None
     """
-
     t = type(data)
     if t == dict:
         for key, value in data.items():
@@ -38,6 +38,16 @@ def convert_bytes_to_base64_in_dict(
 def download_aux(
     url: str, is_json: bool, *args, **kwargs
 ) -> dict[str, typing.Any] | bytes:
+    """
+    Downloads content from a URL, returning JSON or raw bytes based on the is_json flag.
+
+    :param url: The URL to download from
+    :param is_json: If True, returns JSON as a dictionary; if False, returns raw bytes
+    :param args: Additional positional arguments for requests.get
+    :param kwargs: Additional keyword arguments for requests.get
+    :return: A dictionary if is_json is True, otherwise bytes
+    :raise: RuntimeError: If the download fails with a non-OK status code
+    """
     if not (response := requests.get(url, headers=HEADERS, *args, **kwargs)).ok:
         raise RuntimeError(f"Failed to download {url}, code:{response.status_code}")
 
@@ -45,10 +55,28 @@ def download_aux(
 
 
 def download(url: str, *args, **kwargs) -> bytes:
+    """
+    Downloads raw content from a URL as bytes.
+
+    :param url: The URL to download from
+    :param args: Additional positional arguments for requests.get
+    :param kwargs: Additional keyword arguments for requests.get
+    :return: The downloaded content as bytes
+    :raise: RuntimeError: If the download fails with a non-OK status code
+    """
     return typing.cast(bytes, download_aux(url, False, *args, **kwargs))
 
 
 def download_json(url: str, *args, **kwargs) -> dict[str, typing.Any]:
+    """
+    Downloads and parses JSON content from a URL.
+
+    :param url: The URL to download JSON from
+    :param args: Additional positional arguments for requests.get
+    :param kwargs: Additional keyword arguments for requests.get
+    :return: The parsed JSON content as a dictionary
+    :raise: RuntimeError: If the download fails with a non-OK status code
+    """
     return typing.cast(dict[str, typing.Any], download_aux(url, True, *args, **kwargs))
 
 
@@ -56,10 +84,12 @@ def map_files_directory(
     path: pathlib.Path, function: typing.Callable[[pathlib.Path], typing.Any]
 ) -> list[tuple[pathlib.Path, typing.Any]]:
     """
-    The function recursively walk directory and call provided parameter function on each file
-    :param path: Root directory path
-    :function: Function that'll be called on each file
-    :return: List of tuple containing the file path and the result returned by the provided function
+    Recursively walks a directory and applies a function to each file.
+
+    :param path: The root directory path to start walking from
+    :param function: The function to call on each file, taking a pathlib.Path as input
+    :return: A list of tuples containing each file path and the result of the function
+    :raise: RuntimeError: If the provided path is not a directory
     """
     if not path.is_dir():
         raise RuntimeError("Path is not a directory")
@@ -69,18 +99,34 @@ def map_files_directory(
 
 def write_files(directory: pathlib.Path, files: dict[str, bytes]) -> None:
     """
-    The function write files in the given directory
-    :param directory: Directory where the files will be written
-    :param files: Dictionnary of file name and associated
-    """
+    Writes files to a specified directory from a dictionary of filenames and data.
 
+    :param directory: The directory where files will be written
+    :param files: A dictionary mapping filenames to their byte content
+    :return: None
+    :raise: None
+    """
     for filename, data in files.items():
         directory.joinpath(filename).write_bytes(data)
 
 
 def is_base64(s: bytes) -> bool:
+    """
+    Checks if a byte sequence matches a base64 pattern.
+
+    :param s: The byte sequence to check
+    :return: True if the sequence is valid base64, False otherwise
+    :raise: None
+    """
     return bool(common_regex.BASE64_REGEX.fullmatch(s))
 
 
 def is_url(s: bytes) -> bool:
+    """
+    Checks if a byte sequence matches a URL pattern.
+
+    :param s: The byte sequence to check
+    :return: True if the sequence is a valid URL, False otherwise
+    :raise: None
+    """
     return bool(common_regex.URL_REGEX.fullmatch(s))

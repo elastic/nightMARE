@@ -18,27 +18,59 @@ CACHE: dict[str, Radare2] = {}
 
 class Radare2:
     class PatternType(enum.Enum):
+        """
+        Enum defining pattern types for searching within a binary.
+
+        :var STRING_PATTERN: Represents a regular ASCII string pattern
+        :var WIDE_STRING_PATTERN: Represents a wide (UTF-16) string pattern
+        :var HEX_PATTERN: Represents a hexadecimal pattern
+        """
         STRING_PATTERN = enum.auto()
         WIDE_STRING_PATTERN = enum.auto()
         HEX_PATTERN = enum.auto()
 
     def __del__(self):
+        """
+        Destructor that cleans up resources when the Radare2 instance is deleted.
+
+        :return: None
+        :raise: None
+        """
         if self.__is_r2_loaded:
             self.__radare.cmd("o--")
             self.__tmp_binary_path.unlink()
 
     def __do_analysis(self) -> None:
+        """
+        Performs analysis on the binary if it hasn't been analyzed yet.
+
+        :return: None
+        :raise: None
+        """
         if not self.__is_analyzed:
             self.__radare.cmd("aaa")
             self.__is_analyzed = True
 
     def __load_r2(self) -> None:
+        """
+        Loads the Radare2 instance with the binary if it hasn't been loaded yet.
+
+        :return: None
+        :raise: None
+        """
         if not self.__is_r2_loaded:
             self.__tmp_binary_path.write_bytes(self.__binary)
             self.__radare = r2pipe.open(str(self.__tmp_binary_path))
             self.__is_r2_loaded = True
 
     def __init__(self, binary: bytes):
+        """
+        Initializes a Radare2 instance with the provided binary data.
+
+        :param binary: The binary data to analyze
+        :return: None
+        :raise: None
+        """
         self.__binary = binary
         self.__file_info: dict[str, typing.Any] = {}
         self.__is_r2_loaded = False
@@ -48,19 +80,47 @@ class Radare2:
         )
 
     def disassemble(self, offset: int, size: int) -> list[dict[str, typing.Any]]:
+        """
+        Disassembles instructions at the specified offset for a given size.
+
+        :param offset: The starting offset to disassemble from
+        :param size: The number of instructions to disassemble
+        :return: A list of dictionaries containing disassembly information
+        :raise: None
+        """
         self.__load_r2()
         return self.__radare.cmdj(f"aoj {size} @{offset}")
 
     def disassemble_previous_instruction(self, offset: int) -> dict[str, typing.Any]:
+        """
+        Disassembles the instruction immediately preceding the given offset.
+
+        :param offset: The offset to find the previous instruction for
+        :return: A dictionary containing the previous instruction's disassembly info
+        :raise: None
+        """
         self.__load_r2()
         return self.disassemble(self.get_previous_instruction_offset(offset), 1)[0]
 
     def disassemble_next_instruction(self, offset: int) -> dict[str, typing.Any]:
+        """
+        Disassembles the instruction immediately following the given offset.
+
+        :param offset: The offset to find the next instruction for
+        :return: A dictionary containing the next instruction's disassembly info
+        :raise: None
+        """
         self.__load_r2()
         return self.disassemble(self.get_next_instruction_offset(offset), 1)[0]
 
     @property
     def file_info(self) -> dict[str, typing.Any]:
+        """
+        Retrieves file information about the loaded binary.
+
+        :return: A dictionary containing file metadata
+        :raise: None
+        """
         self.__load_r2()
         if not self.__file_info:
             self.__file_info = self.__radare.cmdj("ij")
@@ -69,6 +129,14 @@ class Radare2:
     def find_pattern(
         self, pattern: str, pattern_type: Radare2.PatternType
     ) -> typing.Iterable[int]:
+        """
+        Searches for a pattern in the binary based on the specified type.
+
+        :param pattern: The pattern to search for (string or hex)
+        :param pattern_type: The type of pattern (STRING_PATTERN, WIDE_STRING_PATTERN, HEX_PATTERN)
+        :return: An iterable of offsets where the pattern is found
+        :raise: None
+        """
         self.__load_r2()
         match pattern_type:
             case Radare2.PatternType.STRING_PATTERN:
@@ -79,16 +147,40 @@ class Radare2:
                 return self.__radare.cmdj(f"/xj {pattern.replace('?', '.')}")
 
     def get_data(self, offset: int, size: int | None = None) -> bytes:
+        """
+        Retrieves data from the binary, choosing between virtual or raw data based on format.
+
+        :param offset: The offset to start reading data from
+        :param size: The number of bytes to read (optional)
+        :return: The requested data as bytes
+        :raise: None
+        """
         if self.__is_r2_loaded and self.file_info["core"]["format"] != "any":
             return self.get_virtual_data(offset, size)
         return self.get_raw_data(offset, size)
 
     def get_raw_data(self, offset: int, size: int | None = None) -> bytes:
+        """
+        Retrieves raw data directly from the binary buffer.
+
+        :param offset: The offset to start reading data from
+        :param size: The number of bytes to read (optional, defaults to rest of binary)
+        :return: The raw data as bytes
+        :raise: None
+        """
         if size:
             return self.__binary[offset : offset + size]
         return self.__binary[offset:]
 
     def get_virtual_data(self, offset: int, size: int | None = None) -> bytes:
+        """
+        Retrieves virtual data from the binary using Radare2's memory mapping.
+
+        :param offset: The virtual address to start reading data from
+        :param size: The number of bytes to read (optional)
+        :return: The virtual data as bytes
+        :raise: RuntimeError: If the virtual address is not found in any section
+        """
         self.__load_r2()
         if not size:
             if not (section_info := self.get_section_info_from_va(offset)):
@@ -100,41 +192,97 @@ class Radare2:
         return bytes(self.__radare.cmdj(f"pxj {size} @{offset}"))
 
     def get_function_start_offset(self, offset: int) -> int:
+        """
+        Retrieves the starting offset of the function containing the given offset.
+
+        :param offset: The offset within a function
+        :return: The starting address of the function
+        :raise: None
+        """
         self.__load_r2()
         self.__do_analysis()
         return self.__radare.cmdj(f"afoj @ {offset}")["address"]
 
     def get_function_end_offset(self, offset: int) -> int:
+        """
+        Retrieves the ending offset of the function containing the given offset.
+
+        :param offset: The offset within a function
+        :return: The ending address of the function
+        :raise: None
+        """
         self.__load_r2()
         self.__do_analysis()
         function_info = self.__radare.cmdj(f"afij @ {offset}")
         return function_info[0]["offset"] + function_info[0]["size"]
 
     def get_basic_block_end_offset(self, offset: int) -> int:
+        """
+        Retrieves the ending offset of the basic block containing the given offset.
+
+        :param offset: The offset within a basic block
+        :return: The ending address of the basic block
+        :raise: None
+        """
         self.__load_r2()
         self.__do_analysis()
         basicblock_info = self.__radare.cmdj(f"afbj. @ {offset}")
         return basicblock_info[0]["addr"] + basicblock_info[0]["size"]
 
     def get_previous_instruction_offset(self, offset: int) -> int:
+        """
+        Retrieves the offset of the instruction immediately preceding the given offset.
+
+        :param offset: The current instruction offset
+        :return: The offset of the previous instruction
+        :raise: None
+        """
         self.__load_r2()
         return self.__radare.cmdj(f"pdj -1 @ {offset}")[0]["offset"]
 
     def get_next_instruction_offset(self, offset: int) -> int:
+        """
+        Retrieves the offset of the instruction immediately following the given offset.
+
+        :param offset: The current instruction offset
+        :return: The offset of the next instruction
+        :raise: None
+        """
         self.__load_r2()
         return self.__radare.cmdj(f"pdj 2 @ {offset}")[1]["offset"]
 
     def get_xrefs_to(self, offset: int) -> list:
+        """
+        Retrieves a list of cross-references pointing to the given offset.
+
+        :param offset: The offset to find references to
+        :return: A list of offsets that reference the given offset
+        :raise: None
+        """
         self.__load_r2()
         references_info = self.__radare.cmdj(f"axtj @ {offset}")
         return [entry["from"] for entry in references_info]
 
     def get_section(self, name: str) -> bytes:
+        """
+        Retrieves the content of a named section from the binary.
+
+        :param name: The name of the section to retrieve
+        :return: The section data as bytes
+        :raise: None
+        """
         self.__load_r2()
         rsrc_info = self.get_section_info(name)
         return self.get_data(rsrc_info["vaddr"], rsrc_info["vsize"])
 
     def get_section_info(self, name: str) -> dict[str, typing.Any] | None:
+        """
+        Retrieves metadata about a named section in the binary.
+
+        :param name: The name of the section to retrieve info for
+        :return: A dictionary with section info or None if not found
+        :raise: None
+        """
         self.__load_r2()
         sections = self.__radare.cmdj(f"iSj")
         for s in sections:
@@ -144,6 +292,13 @@ class Radare2:
             return None
 
     def get_section_info_from_va(self, va: int) -> dict[str, typing.Any] | None:
+        """
+        Retrieves section metadata for a given virtual address.
+
+        :param va: The virtual address to find the section for
+        :return: A dictionary with section info or None if not found
+        :raise: None
+        """
         self.__load_r2()
         for section_info in self.__radare.cmdj(f"iSj"):
             if (
@@ -155,23 +310,65 @@ class Radare2:
         return None
 
     def get_strings(self, offset: int) -> bytes:
+        """
+        Retrieves a string located at the given offset.
+
+        :param offset: The offset where the string is located
+        :return: The string data as bytes encoded in UTF-8
+        :raise: None
+        """
         self.__load_r2()
         return bytes(self.__radare.cmdj(f"psj @ {offset}")["string"], "utf-8")
 
     def get_u8(self, offset: int) -> int:
+        """
+        Retrieves an unsigned 8-bit integer from the given offset.
+
+        :param offset: The offset to read the value from
+        :return: The unsigned 8-bit integer value
+        :raise: None
+        """
         return cast.u8(self.get_data(offset, 1))
 
     def get_u16(self, offset: int) -> int:
+        """
+        Retrieves an unsigned 16-bit integer from the given offset.
+
+        :param offset: The offset to read the value from
+        :return: The unsigned 16-bit integer value
+        :raise: None
+        """
         return cast.u16(self.get_data(offset, 2))
 
     def get_u32(self, offset: int) -> int:
+        """
+        Retrieves an unsigned 32-bit integer from the given offset.
+
+        :param offset: The offset to read the value from
+        :return: The unsigned 32-bit integer value
+        :raise: None
+        """
         return cast.u32(self.get_data(offset, 4))
 
     def get_u64(self, offset: int) -> int:
+        """
+        Retrieves an unsigned 64-bit integer from the given offset.
+
+        :param offset: The offset to read the value from
+        :return: The unsigned 64-bit integer value
+        :raise: None
+        """
         return cast.u64(self.get_data(offset, 8))
 
     @staticmethod
     def load(binary: bytes) -> Radare2:
+        """
+        Loads a Radare2 instance from a binary, using a cache to avoid duplicates.
+
+        :param binary: The binary data to load
+        :return: A Radare2 instance
+        :raise: None
+        """
         global CACHE
 
         hash = hashlib.sha256(binary).hexdigest()
@@ -183,7 +380,21 @@ class Radare2:
         return x
 
     def set_arch(self, arch: str) -> None:
+        """
+        Sets the architecture for Radare2 analysis.
+
+        :param arch: The architecture to set (e.g., "x86", "arm")
+        :return: None
+        :raise: None
+        """
         self.__radare.cmd(f"e asm.arch = {arch}")
 
     def set_bits(self, bits: int) -> None:
+        """
+        Sets the bit width for Radare2 analysis.
+
+        :param bits: The bit width to set (e.g., 32, 64)
+        :return: None
+        :raise: None
+        """
         self.__radare.cmd(f"e asm.bits = {bits}")
