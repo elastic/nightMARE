@@ -36,7 +36,6 @@ class Radare2:
         if not self.__is_r2_loaded:
             self.__tmp_binary_path.write_bytes(self.__binary)
             self.__radare = r2pipe.open(str(self.__tmp_binary_path))
-            self.__file_info = self.__radare.cmdj("ij")
             self.__is_r2_loaded = True
 
     def __init__(self, binary: bytes):
@@ -60,6 +59,13 @@ class Radare2:
         self.__load_r2()
         return self.disassemble(self.get_next_instruction_offset(offset), 1)[0]
 
+    @property
+    def file_info(self) -> dict[str, typing.Any]:
+        self.__load_r2()
+        if not self.__file_info:
+            self.__file_info = self.__radare.cmdj("ij")
+        return self.__file_info
+
     def find_pattern(
         self, pattern: str, pattern_type: Radare2.PatternType
     ) -> typing.Iterable[int]:
@@ -73,7 +79,7 @@ class Radare2:
                 return self.__radare.cmdj(f"/xj {pattern.replace('?', '.')}")
 
     def get_data(self, offset: int, size: int | None = None) -> bytes:
-        if self.__is_r2_loaded and self.__file_info["core"]["format"] != "any":
+        if self.__is_r2_loaded and self.file_info["core"]["format"] != "any":
             return self.get_virtual_data(offset, size)
         return self.get_raw_data(offset, size)
 
@@ -148,7 +154,7 @@ class Radare2:
                 return section_info
         return None
 
-    def get_string(self, offset: int) -> bytes:
+    def get_strings(self, offset: int) -> bytes:
         self.__load_r2()
         return bytes(self.__radare.cmdj(f"psj @ {offset}")["string"], "utf-8")
 
@@ -175,3 +181,9 @@ class Radare2:
         x = Radare2(binary)
         CACHE[hash] = x
         return x
+
+    def set_arch(self, arch: str) -> None:
+        self.__radare.cmd(f"e asm.arch = {arch}")
+
+    def set_bits(self, bits: int) -> None:
+        self.__radare.cmd(f"e asm.bits = {bits}")
