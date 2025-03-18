@@ -25,6 +25,7 @@ class Radare2:
         :var WIDE_STRING_PATTERN: Represents a wide (UTF-16) string pattern
         :var HEX_PATTERN: Represents a hexadecimal pattern
         """
+
         STRING_PATTERN = enum.auto()
         WIDE_STRING_PATTERN = enum.auto()
         HEX_PATTERN = enum.auto()
@@ -159,6 +160,11 @@ class Radare2:
             return self.get_virtual_data(offset, size)
         return self.get_raw_data(offset, size)
 
+    def get_functions(self) -> list[dict[str, typing.Any]]:
+        self.__load_r2()
+        self.__do_analysis()
+        return self.__radare.cmdj("aflj")
+
     def get_raw_data(self, offset: int, size: int | None = None) -> bytes:
         """
         Retrieves raw data directly from the binary buffer.
@@ -229,6 +235,11 @@ class Radare2:
         basicblock_info = self.__radare.cmdj(f"afbj. @ {offset}")
         return basicblock_info[0]["addr"] + basicblock_info[0]["size"]
 
+    def get_function_references(self, function_offset) -> list[dict[str, typing.Any]]:
+        self.__load_r2()
+        self.__do_analysis()
+        return self.__radare.cmdj(f"afxj @ {function_offset}")
+
     def get_previous_instruction_offset(self, offset: int) -> int:
         """
         Retrieves the offset of the instruction immediately preceding the given offset.
@@ -251,6 +262,11 @@ class Radare2:
         self.__load_r2()
         return self.__radare.cmdj(f"pdj 2 @ {offset}")[1]["offset"]
 
+    def get_xrefs_from(self, offset: int) -> list:
+        self.__load_r2()
+        self.__do_analysis()
+        return [x["to"] for x in self.__radare.cmdj(f"axfj @ {offset}")]
+
     def get_xrefs_to(self, offset: int) -> list:
         """
         Retrieves a list of cross-references pointing to the given offset.
@@ -260,8 +276,8 @@ class Radare2:
         :raise: None
         """
         self.__load_r2()
-        references_info = self.__radare.cmdj(f"axtj @ {offset}")
-        return [entry["from"] for entry in references_info]
+        self.__do_analysis()
+        return [x["from"] for x in self.__radare.cmdj(f"axtj @ {offset}")]
 
     def get_section(self, name: str) -> bytes:
         """
@@ -309,7 +325,7 @@ class Radare2:
                 return section_info
         return None
 
-    def get_strings(self, offset: int) -> bytes:
+    def get_string(self, offset: int) -> bytes:
         """
         Retrieves a string located at the given offset.
 
