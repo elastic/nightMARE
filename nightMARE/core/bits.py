@@ -1,7 +1,7 @@
 # coding: utf-8
 
 
-def rol(x, n, max_bits) -> int:
+def rol(x: int, n:int , max_bits: int) -> int:
     """
     Performs a bitwise rotate left operation on the input number.
 
@@ -16,7 +16,7 @@ def rol(x, n, max_bits) -> int:
     )
 
 
-def ror(x, n, max_bits) -> int:
+def ror(x: int, n:int , max_bits: int) -> int:
     """
     Performs a bitwise rotate right operation on the input number.
 
@@ -31,7 +31,7 @@ def ror(x, n, max_bits) -> int:
     )
 
 
-def rol8(x, n):
+def rol8(x: int, n: int):
     """
     Performs a bitwise 8-bit rotate left operation on the input number.
 
@@ -43,7 +43,7 @@ def rol8(x, n):
     return rol(x, n, 8)
 
 
-def rol16(x, n):
+def rol16(x: int, n: int):
     """
     Performs a bitwise 16-bit rotate left operation on the input number.
 
@@ -55,7 +55,7 @@ def rol16(x, n):
     return rol(x, n, 16)
 
 
-def rol32(x, n):
+def rol32(x: int, n: int):
     """
     Performs a bitwise 32-bit rotate left operation on the input number.
 
@@ -67,7 +67,7 @@ def rol32(x, n):
     return rol(x, n, 32)
 
 
-def rol64(x, n):
+def rol64(x: int, n: int):
     """
     Performs a bitwise 64-bit rotate left operation on the input number.
 
@@ -79,7 +79,7 @@ def rol64(x, n):
     return rol(x, n, 64)
 
 
-def ror8(x, n):
+def ror8(x: int, n: int):
     """
     Performs a bitwise 8-bit rotate right operation on the input number.
 
@@ -91,7 +91,7 @@ def ror8(x, n):
     return ror(x, n, 8)
 
 
-def ror16(x, n):
+def ror16(x: int, n: int):
     """
     Performs a bitwise 16-bit rotate right operation on the input number.
 
@@ -103,7 +103,7 @@ def ror16(x, n):
     return ror(x, n, 16)
 
 
-def ror32(x, n):
+def ror32(x: int, n: int):
     """
     Performs a bitwise 32-bit rotate right operation on the input number.
 
@@ -115,7 +115,7 @@ def ror32(x, n):
     return ror(x, n, 32)
 
 
-def ror64(x, n):
+def ror64(x: int, n: int):
     """
     Performs a bitwise 64-bit rotate right operation on the input number.
 
@@ -127,7 +127,7 @@ def ror64(x, n):
     return ror(x, n, 64)
 
 
-def swap32(x):
+def swap32(x: int):
     """
     Performs a byte swap on a 32-bit input number.
 

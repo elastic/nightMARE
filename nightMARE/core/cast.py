@@ -1,7 +1,7 @@
 # coding: utf-8
 
 
-def u64(x):
+def u64(x: int):
     """
     Converts the first 8 bytes of a byte sequence to an unsigned 64-bit integer.
 
@@ -12,7 +12,7 @@ def u64(x):
     return int.from_bytes(x[0:8], "little")
 
 
-def u32(x):
+def u32(x: int):
     """
     Converts the first 4 bytes of a byte sequence to an unsigned 32-bit integer.
 
@@ -23,7 +23,7 @@ def u32(x):
     return int.from_bytes(x[0:4], "little")
 
 
-def u16(x):
+def u16(x: int):
     """
     Converts the first 2 bytes of a byte sequence to an unsigned 16-bit integer.
 
@@ -34,7 +34,7 @@ def u16(x):
     return int.from_bytes(x[0:2], "little")
 
 
-def u8(x):
+def u8(x: int):
     """
     Converts the first byte of a byte sequence to an unsigned 8-bit integer.
 
@@ -45,7 +45,7 @@ def u8(x):
     return int.from_bytes(x[0:1], "little")
 
 
-def p64(x):
+def p64(x: int):
     """
     Converts an integer to an 8-byte little-endian byte sequence.
 
@@ -56,7 +56,7 @@ def p64(x):
     return x.to_bytes(8, "little")
 
 
-def p32(x):
+def p32(x: int):
     """
     Converts an integer to a 4-byte little-endian byte sequence.
 
@@ -67,7 +67,7 @@ def p32(x):
     return x.to_bytes(4, "little")
 
 
-def p16(x):
+def p16(x: int):
     """
     Converts an integer to a 2-byte little-endian byte sequence.
 
@@ -78,7 +78,7 @@ def p16(x):
     return x.to_bytes(2, "little")
 
 
-def p8(x):
+def p8(x: int):
     """
     Converts an integer to a 1-byte little-endian byte sequence.
 
