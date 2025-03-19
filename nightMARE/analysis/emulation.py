@@ -278,7 +278,7 @@ class WindowsEmulator(object):
         """
         Sets or unsets a hook for a PE's import address table entry.
 
-        :param function_name: Name of the import (e.g., "CreateRemoteThread")
+        :param function_name: Name of the import (e.g., b"CreateRemoteThread")
         :param hook: Callback function to set, or None to unset the hook
         :return: None
         :raise: RuntimeError: If the function name doesn't exist in the IAT
