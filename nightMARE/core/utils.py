@@ -6,6 +6,7 @@ import requests
 
 from nightMARE.core import cast
 from nightMARE.core import common_regex
+from nightMARE.analysis import reversing
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
@@ -20,8 +21,8 @@ def convert_bytes_to_base64_in_dict(
 
     :param data: The dictionary containing values to convert
     :return: The dictionary with bytes values converted to base64 strings
-    :raise: None
     """
+
     t = type(data)
     if t == dict:
         for key, value in data.items():
@@ -48,6 +49,7 @@ def download_aux(
     :return: A dictionary if is_json is True, otherwise bytes
     :raise: RuntimeError: If the download fails with a non-OK status code
     """
+
     if not (response := requests.get(url, headers=HEADERS, *args, **kwargs)).ok:
         raise RuntimeError(f"Failed to download {url}, code:{response.status_code}")
 
@@ -64,6 +66,7 @@ def download(url: str, *args, **kwargs) -> bytes:
     :return: The downloaded content as bytes
     :raise: RuntimeError: If the download fails with a non-OK status code
     """
+
     return typing.cast(bytes, download_aux(url, False, *args, **kwargs))
 
 
@@ -77,7 +80,30 @@ def download_json(url: str, *args, **kwargs) -> dict[str, typing.Any]:
     :return: The parsed JSON content as a dictionary
     :raise: RuntimeError: If the download fails with a non-OK status code
     """
+
     return typing.cast(dict[str, typing.Any], download_aux(url, True, *args, **kwargs))
+
+
+def is_base64(s: bytes) -> bool:
+    """
+    Checks if a byte sequence matches a base64 pattern.
+
+    :param s: The byte sequence to check
+    :return: True if the sequence is valid base64, False otherwise
+    """
+
+    return bool(common_regex.BASE64_REGEX.fullmatch(s))
+
+
+def is_url(s: bytes) -> bool:
+    """
+    Checks if a byte sequence matches a URL pattern.
+
+    :param s: The byte sequence to check
+    :return: True if the sequence is a valid URL, False otherwise
+    """
+
+    return bool(common_regex.URL_REGEX.fullmatch(s))
 
 
 def map_files_directory(
@@ -91,6 +117,7 @@ def map_files_directory(
     :return: A list of tuples containing each file path and the result of the function
     :raise: RuntimeError: If the provided path is not a directory
     """
+
     if not path.is_dir():
         raise RuntimeError("Path is not a directory")
 
@@ -103,30 +130,7 @@ def write_files(directory: pathlib.Path, files: dict[str, bytes]) -> None:
 
     :param directory: The directory where files will be written
     :param files: A dictionary mapping filenames to their byte content
-    :return: None
-    :raise: None
     """
+
     for filename, data in files.items():
         directory.joinpath(filename).write_bytes(data)
-
-
-def is_base64(s: bytes) -> bool:
-    """
-    Checks if a byte sequence matches a base64 pattern.
-
-    :param s: The byte sequence to check
-    :return: True if the sequence is valid base64, False otherwise
-    :raise: None
-    """
-    return bool(common_regex.BASE64_REGEX.fullmatch(s))
-
-
-def is_url(s: bytes) -> bool:
-    """
-    Checks if a byte sequence matches a URL pattern.
-
-    :param s: The byte sequence to check
-    :return: True if the sequence is a valid URL, False otherwise
-    :raise: None
-    """
-    return bool(common_regex.URL_REGEX.fullmatch(s))

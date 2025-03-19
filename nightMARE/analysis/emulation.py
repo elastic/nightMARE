@@ -21,9 +21,8 @@ class WindowsEmulator(object):
 
         :param address: The memory address to check for an IAT hook
         :param args: Arguments to pass to the hook function
-        :return: None
-        :raise: None
         """
+
         if address in self.__iat_hooks:
             self.__iat_hooks[address](self, *args)
 
@@ -33,9 +32,8 @@ class WindowsEmulator(object):
 
         :param args: Variable arguments to pass to the hook
         :param kwargs: Keyword arguments, including the 'hook' callable
-        :return: None
-        :raise: None
         """
+
         hook = kwargs["hook"]
         hook(self, *args[1:])
 
@@ -44,9 +42,8 @@ class WindowsEmulator(object):
         Dispatches an IAT hook by printing it and calling it with the provided arguments.
 
         :param args: Variable arguments including the address to dispatch
-        :return: None
-        :raise: None
         """
+
         address = args[1]
         self.__print_iat_hook(address)
         self.__call_iat_hook(address, args[1:])
@@ -54,10 +51,8 @@ class WindowsEmulator(object):
     def __enable_iat_hooking(self) -> None:
         """
         Enables IAT hooking by adding a block hook to the unicorn engine.
-
-        :return: None
-        :raise: None
         """
+
         self.unicorn.hook_add(unicorn.UC_HOOK_BLOCK, self.__dispatch_iat_hook)
 
     def __find_free_memory(self, size: int) -> int:
@@ -68,6 +63,7 @@ class WindowsEmulator(object):
         :return: The starting address of the free memory block
         :raise: RuntimeError: If no free memory is found
         """
+
         address = 0x10000
         while self.__is_memory_mapped(address, size):
             if address >= 2 ** (32 if self.__is_x86 else 64) - 1:
@@ -80,9 +76,8 @@ class WindowsEmulator(object):
         Initializes the Windows emulator with either x86 or x64 architecture.
 
         :param is_x86: Flag that is used to create an x86 or x64 emulator
-        :return: None
-        :raise: None
         """
+
         self.unicorn = unicorn.Uc(
             unicorn.UC_ARCH_X86, unicorn.UC_MODE_32 if is_x86 else unicorn.UC_MODE_64
         )
@@ -100,8 +95,8 @@ class WindowsEmulator(object):
         :param address: The starting address to check
         :param size: The size of the memory region to check
         :return: True if the memory is mapped, False otherwise
-        :raise: None
         """
+
         for region in self.unicorn.mem_regions():
             if region[0] <= (address + size) <= region[0] + region[1]:
                 return True
@@ -112,9 +107,8 @@ class WindowsEmulator(object):
         Initializes the Import Address Table (IAT) for a given PE binary.
 
         :param pe: The PE binary object to initialize the IAT from
-        :return: None
-        :raise: None
         """
+
         address = self.allocate_memory(0x10000)
         for _import in pe.imports:
             for function in _import.entries:
@@ -132,8 +126,8 @@ class WindowsEmulator(object):
 
         :param stack_size: The size of the stack to initialize
         :return: The starting address of the stack
-        :raise: None
         """
+
         address = self.allocate_memory(stack_size)
         self.unicorn.reg_write(
             unicorn.x86_const.UC_X86_REG_ESP, address + (stack_size // 2)
@@ -145,9 +139,8 @@ class WindowsEmulator(object):
         Maps a PE binary into the emulator's memory.
 
         :param pe: The PE binary object to map into memory
-        :return: None
-        :raise: None
         """
+
         self.unicorn.mem_map(pe.imagebase, pe.virtual_size)
         for section in pe.sections:
             self.unicorn.mem_write(
@@ -159,9 +152,8 @@ class WindowsEmulator(object):
         Prints information about an IAT hook if it exists.
 
         :param address: The address of the IAT hook to print
-        :return: None
-        :raise: None
         """
+
         if address in self.__inv_iat:
             hook_name = (
                 self.__iat_hooks[address]
@@ -176,8 +168,8 @@ class WindowsEmulator(object):
 
         :param size: Amount of bytes to allocate
         :return: Address of the newly allocated memory in the emulator
-        :raise: None
         """
+
         address = self.__find_free_memory(size)
         self.unicorn.mem_map(address, size)
         return address
@@ -188,8 +180,8 @@ class WindowsEmulator(object):
         Gets the current instruction pointer (EIP for x86, RIP for x64).
 
         :return: The current instruction pointer (EIP/RIP)
-        :raise: None
         """
+
         return self.unicorn.reg_read(
             unicorn.x86_const.UC_X86_REG_EIP
             if self.__is_x86
@@ -202,8 +194,8 @@ class WindowsEmulator(object):
         Gets the current stack pointer (ESP for x86, RSP for x64).
 
         :return: The current stack pointer (ESP/RSP)
-        :raise: None
         """
+
         return self.unicorn.reg_read(
             unicorn.x86_const.UC_X86_REG_ESP
             if self.__is_x86
@@ -216,9 +208,8 @@ class WindowsEmulator(object):
         Sets the instruction pointer (EIP for x86, RIP for x64).
 
         :param x: The value to set the instruction pointer to
-        :return: None
-        :raise: None
         """
+
         self.unicorn.reg_write(
             (
                 unicorn.x86_const.UC_X86_REG_EIP
@@ -234,9 +225,8 @@ class WindowsEmulator(object):
         Sets the stack pointer (ESP for x86, RSP for x64).
 
         :param x: The value to set the stack pointer to
-        :return: None
-        :raise: None
         """
+
         self.unicorn.reg_write(
             (
                 unicorn.x86_const.UC_X86_REG_ESP
@@ -252,9 +242,8 @@ class WindowsEmulator(object):
 
         :param address: Address of the memory to free
         :param size: Size of the memory to free
-        :return: None
-        :raise: None
         """
+
         self.unicorn.mem_unmap(address, size)
 
     def do_return(self, cleaning_size: int = 0) -> None:
@@ -262,9 +251,8 @@ class WindowsEmulator(object):
         Emulates a return instruction by updating the instruction and stack pointers.
 
         :param cleaning_size: Optional amount of bytes to clean after return, defaults to 0
-        :return: None
-        :raise: None
         """
+
         self.ip = int.from_bytes(
             self.unicorn.mem_read(self.sp, self.__pointer_size), "little"
         )
@@ -280,9 +268,9 @@ class WindowsEmulator(object):
 
         :param function_name: Name of the import (e.g., b"CreateRemoteThread")
         :param hook: Callback function to set, or None to unset the hook
-        :return: None
         :raise: RuntimeError: If the function name doesn't exist in the IAT
         """
+
         if function_name not in self.__iat:
             raise RuntimeError("Failed to set IAT hook, function doesn't exist")
         self.__iat_hooks[self.__iat[function_name]] = hook
@@ -298,8 +286,8 @@ class WindowsEmulator(object):
         :param hook_type: Unicorn hook type (e.g., UC_HOOK_BLOCK)
         :param hook: Callback function to be invoked when the hook triggers
         :return: The hook handle assigned by the unicorn engine
-        :raise: None
         """
+
         return self.unicorn.hook_add(
             hook_type, functools.partial(self.__call_hook, hook=hook)
         )
@@ -310,9 +298,9 @@ class WindowsEmulator(object):
 
         :param pe: PE binary object to load
         :param stack_size: The size of the PE's stack to be mapped in the emulator
-        :return: None
         :raise: RuntimeError: If a PE is already loaded
         """
+
         if self.__is_pe_loaded:
             raise RuntimeError("PE is already loaded")
 
@@ -321,4 +309,3 @@ class WindowsEmulator(object):
         self.__enable_iat_hooking()
         self.__init_stack(stack_size)
         self.__is_pe_loaded = True
-  

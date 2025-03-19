@@ -40,6 +40,7 @@ TAG_MASKS = [(1 << i) for i in range(0, 8)]
 
 def get_displacement(offset: int) -> int:
     """Calculate the displacement."""
+
     result = 0
     while offset >= 0x10:
         offset >>= 1
