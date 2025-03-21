@@ -45,7 +45,7 @@ class Radare2:
         """
 
         if not self.__is_analyzed:
-            self.__radare.cmd("aaa")
+            self.__radare.cmd("aaaa")
             self.__is_analyzed = True
 
     def __load_r2(self) -> None:
@@ -140,7 +140,7 @@ class Radare2:
             case Radare2.PatternType.HEX_PATTERN:
                 return self.__radare.cmdj(f"/xj {pattern.replace('?', '.')}")
 
-    def find_first_pattern_offset(
+    def find_first_pattern(
         self,
         patterns: list[str],
         pattern_type: Radare2.PatternType.HEX_PATTERN,
@@ -216,19 +216,19 @@ class Radare2:
 
         return bytes(self.__radare.cmdj(f"pxj {size} @{offset}"))
 
-    def get_function_start_offset(self, offset: int) -> int:
+    def get_function_start(self, offset: int) -> int | None:
         """
         Retrieves the starting offset of the function containing the given offset.
 
         :param offset: The offset within a function
-        :return: The starting address of the function
+        :return: The starting address of the function or None if the offset isn't within a function
         """
 
         self.__load_r2()
         self.__do_analysis()
-        return self.__radare.cmdj(f"afoj @ {offset}")["address"]
+        return self.__radare.cmdj(f"afoj @ {offset}").get("address", None)
 
-    def get_function_end_offset(self, offset: int) -> int:
+    def get_function_end(self, offset: int) -> int:
         """
         Retrieves the ending offset of the function containing the given offset.
 
@@ -241,7 +241,7 @@ class Radare2:
         function_info = self.__radare.cmdj(f"afij @ {offset}")
         return function_info[0]["offset"] + function_info[0]["size"]
 
-    def get_basic_block_end_offset(self, offset: int) -> int:
+    def get_basic_block_end(self, offset: int) -> int:
         """
         Retrieves the ending offset of the basic block containing the given offset.
 
@@ -412,9 +412,9 @@ class Radare2:
         return cast.u64(self.get_data(offset, 8))
 
     @staticmethod
-    def load(binary: bytes) -> Radare2:
+    def get(binary: bytes) -> Radare2:
         """
-        Loads a Radare2 instance from a binary, using a cache to avoid duplicates.
+        Get a Radare2 instance from a binary, using a cache to avoid duplicates.
 
         :param binary: The binary data to load
         :return: A Radare2 instance
