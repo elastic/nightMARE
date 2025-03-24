@@ -51,3 +51,6 @@ Download the corpus from [here](#) and place the archive in the `tests` folder t
 ```bash
 py.test
 ```
+
+## How to Contribute
+Contributors must sign a Contributor License Agreement before contributing code to any Elastic repositories.
