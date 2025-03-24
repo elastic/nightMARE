@@ -35,6 +35,12 @@ Example usage: https://www.elastic.co/security-labs/unpacking-icedid
 
 ## Install
 ```bash
+pip install nightmare-lib
+```
+
+or
+
+```bash
 git clone https://github.com/elastic/nightMARE
 python -m pip install ./nightMARE
 ```
