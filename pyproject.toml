@@ -3,8 +3,9 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "nightMARE"
+name = "nightMARE-lib"
 version = "0.14.0"
+license-files = []
 dependencies = [
     "r2pipe == 1.9.4",
     "unicorn == 2.0.1",
@@ -14,7 +15,7 @@ dependencies = [
     "requests == 2.32.3",
     "pycryptodome == 3.21.0",
     "pillow == 11.0.0",
-    "pytest == 8.3.5"
+    "pytest == 8.3.5",
 ]
 
 requires-python = ">=3.10"
