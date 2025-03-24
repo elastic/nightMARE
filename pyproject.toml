@@ -4,19 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nightMARE"
-version = "0.13.2"
+version = "0.14.0"
 dependencies = [
-    "unicorn==2.0.1",
-    "lief==0.14.0",
-    "capstone==5.0.0",
-    "construct==2.10.70",
-    "yara-python==4.5.1",
-    "requests==2.32.3",
-    "smda==1.13.23",
-    "pycryptodome==3.21.0",
-    "dotnetfile==0.2.4",
-    "Pillow==11.0.0",
-    "r2pipe",
+    "r2pipe == 1.9.4",
+    "unicorn == 2.0.1",
+    "lief == 0.16.4",
+    "dotnetfile == 0.2.4",
+    "construct == 2.10.70",
+    "requests == 2.32.3",
+    "pycryptodome == 3.21.0",
+    "pillow == 11.0.0",
+    "pytest == 8.3.5"
 ]
 
 requires-python = ">=3.10"

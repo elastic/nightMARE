@@ -13,30 +13,35 @@ Example usage: https://www.elastic.co/security-labs/unpacking-icedid
 
 ## Malware modules
 
-| Module                             | Description                         |
-| ---------------------------------- | ----------------------------------- |
-| `nightmare.malware.blister`        | Implement BLISTER algorithms        |
-| `nightmare.malware.ghostpulse`     | Implement GHOSTPULSE algorithms     |
-| `nightmare.malware.icedid`         | Implement ICEDID algorithms         |
-| `nightmare.malware.latrodectus`    | Implement LATRODECTUS algorithms    |
-| `nightmare.malware.lobshot`        | Implement LOBSHOT algorithms        |
-| `nightmare.malware.netwire`        | Implement NETWIRE algorithms        |
-| `nightmare.malware.nighthawk`      | Implement NIGHTHAWK algorithms      |
-| `nightmare.malware.redlinestealer` | Implement REDLINESTEALER algorithms |
-| `nightmare.malware.remcos`         | Implement REMCOS algorithms         |
-| `nightmare.malware.smokeloader`    | Implement SMOKELOADER algorithms    |
-| `nightmare.malware.stealc`         | Implement stealc algorithms         |
-| `nightmare.malware.xorddos`        | Implement XORDDOS algorithms        |
+| Module                                | Description                              |
+| ------------------------------------- | ---------------------------------------- |
+| `nightmare.malware.blister`           | Implement BLISTER algorithms             |
+| `nightmare.malware.ghostpulse`        | Implement GHOSTPULSE algorithms          |
+| `nightmare.malware.deprecated.icedid` | Implement ICEDID algorithms (deprecated) |
+| `nightmare.malware.latrodectus`       | Implement LATRODECTUS algorithms         |
+| `nightmare.malware.lobshot`           | Implement LOBSHOT algorithms             |
+| `nightmare.malware.netwire`           | Implement NETWIRE algorithms             |
+| `nightmare.malware.nighthawk`         | Implement NIGHTHAWK algorithms           |
+| `nightmare.malware.redlinestealer`    | Implement REDLINESTEALER algorithms      |
+| `nightmare.malware.remcos`            | Implement REMCOS algorithms              |
+| `nightmare.malware.smokeloader`       | Implement SMOKELOADER algorithms         |
+| `nightmare.malware.stealc`            | Implement stealc algorithms              |
+| `nightmare.malware.xorddos`           | Implement XORDDOS algorithms             |
 
+
+## Requirements
+- Python >= `3.10` is required.
+- [Radare2 binaries](https://github.com/radareorg/radare2/releases) must be installed and available in the system's PATH environment variable.
 
 ## Install
-
-To install nightMARE, you'll need Python 3.10+. 
-
-```
-# Windows
-python -m pip install .\nightMARE
-
-# Linux/macOS
+```bash
+git clone https://github.com/elastic/nightMARE
 python -m pip install ./nightMARE
+```
+
+## Test
+Download the corpus from [here](#) and place the archive in the `tests` folder to run the tests. **Warning: The archive contains malware; testing should be performed in a virtual machine for safety**.
+
+```bash
+py.test
 ```

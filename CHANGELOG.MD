@@ -1,6 +1,14 @@
 # Changelog
 
-## v0.13.2 - 10/16/2024
+## v0.14.0 - 2025-03-18
+- Added Radare2 as the new reverse engineering backend
+- Reworked and refactored the codebase to use Radare2
+- Reorganized the module structure
+- Added unit tests for the malware module.
+- Various improvements and bug fixes
+- Removed unused dependencies and updated modules 
+
+## v0.13.2 - 2024-10-16
 - `GHOSTPULSE` algorithms now support latest family version 
 
 ## Previous versions
