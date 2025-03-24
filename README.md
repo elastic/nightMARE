@@ -21,7 +21,6 @@ Example usage: https://www.elastic.co/security-labs/unpacking-icedid
 | `nightmare.malware.latrodectus`       | Implement LATRODECTUS algorithms         |
 | `nightmare.malware.lobshot`           | Implement LOBSHOT algorithms             |
 | `nightmare.malware.netwire`           | Implement NETWIRE algorithms             |
-| `nightmare.malware.nighthawk`         | Implement NIGHTHAWK algorithms           |
 | `nightmare.malware.redlinestealer`    | Implement REDLINESTEALER algorithms      |
 | `nightmare.malware.remcos`            | Implement REMCOS algorithms              |
 | `nightmare.malware.smokeloader`       | Implement SMOKELOADER algorithms         |
@@ -46,7 +45,7 @@ python -m pip install ./nightMARE
 ```
 
 ## Test
-Download the corpus from [here](#) and place the archive in the `tests` folder to run the tests. **Warning: The archive contains malware; testing should be performed in a virtual machine for safety**.
+Download the corpus from [here](#not-yet) and place the archive in the `tests` folder to run the tests. **Warning: The archive contains malware; testing should be performed in a virtual machine for safety**.
 
 ```bash
 py.test

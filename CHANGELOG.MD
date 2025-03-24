@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.14.1 - 2025-03-24
+- Removing NIGHTHAWK module
+
 ## v0.14.0 - 2025-03-18
 - Added Radare2 as the new reverse engineering backend
 - Reworked and refactored the codebase to use Radare2
