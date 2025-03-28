@@ -3,19 +3,16 @@
 import pathlib
 import typing
 import requests
+import base64
 
-from nightMARE.core import cast
-from nightMARE.core import common_regex
-from nightMARE.analysis import reversing
+from nightMARE.core.regex import bytes_re
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
 }
 
 
-def convert_bytes_to_base64_in_dict(
-    data: dict[str, typing.Any],
-) -> dict[str, typing.Any]:
+def convert_bytes_to_base64_in_dict(data: typing.Any) -> typing.Any:
     """
     Recursively converts bytes values to base64 strings within a dictionary.
 
@@ -31,7 +28,7 @@ def convert_bytes_to_base64_in_dict(
     elif t == list:
         return [convert_bytes_to_base64_in_dict(x) for x in data]
     elif t == bytes:
-        return cast.bytes_to_b64_str(data)
+        return str(base64.b64encode(data), "utf-8")
     else:
         return data
 
@@ -92,7 +89,7 @@ def is_base64(s: bytes) -> bool:
     :return: True if the sequence is valid base64, False otherwise
     """
 
-    return bool(common_regex.BASE64_REGEX.fullmatch(s))
+    return bool(bytes_re.BASE64_REGEX.fullmatch(s))
 
 
 def is_url(s: bytes) -> bool:
@@ -103,7 +100,7 @@ def is_url(s: bytes) -> bool:
     :return: True if the sequence is a valid URL, False otherwise
     """
 
-    return bool(common_regex.URL_REGEX.fullmatch(s))
+    return bool(bytes_re.URL_REGEX.fullmatch(s))
 
 
 def map_files_directory(

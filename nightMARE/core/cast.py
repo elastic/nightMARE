@@ -1,7 +1,7 @@
 # coding: utf-8
 
 
-def u64(x: int):
+def u64(x: bytes):
     """
     Converts the first 8 bytes of a byte sequence to an unsigned 64-bit integer.
 
@@ -13,7 +13,7 @@ def u64(x: int):
     return int.from_bytes(x[0:8], "little")
 
 
-def u32(x: int):
+def u32(x: bytes):
     """
     Converts the first 4 bytes of a byte sequence to an unsigned 32-bit integer.
 
@@ -25,7 +25,7 @@ def u32(x: int):
     return int.from_bytes(x[0:4], "little")
 
 
-def u16(x: int):
+def u16(x: bytes):
     """
     Converts the first 2 bytes of a byte sequence to an unsigned 16-bit integer.
 
@@ -37,7 +37,7 @@ def u16(x: int):
     return int.from_bytes(x[0:2], "little")
 
 
-def u8(x: int):
+def u8(x: bytes):
     """
     Converts the first byte of a byte sequence to an unsigned 8-bit integer.
 

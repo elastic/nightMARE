@@ -122,13 +122,13 @@ class Radare2:
 
     def find_pattern(
         self, pattern: str, pattern_type: Radare2.PatternType
-    ) -> typing.Iterable[dict[str, typing.Any]]:
+    ) -> list[dict[str, typing.Any]]:
         """
         Searches for a pattern in the binary based on the specified type.
 
         :param pattern: The pattern to search for (string or hex)
         :param pattern_type: The type of pattern (STRING_PATTERN, WIDE_STRING_PATTERN, HEX_PATTERN)
-        :return: An iterable of offsets where the pattern is found
+        :return: A list of offsets where the pattern is found
         """
 
         self.__load_r2()
@@ -370,6 +370,17 @@ class Radare2:
 
         self.__load_r2()
         return bytes(self.__radare.cmdj(f"psj @ {offset}")["string"], "utf-8")
+
+    def get_strings(self) -> list[dict[str, typing.Any]]:
+        """
+        Retrieves all string in the binary.
+
+        :return: A dictionnary describing each strings found in the binary
+        """
+
+        self.__load_r2()
+        self.__do_analysis()
+        return self.__radare.cmdj(f"izj")
 
     def get_u8(self, offset: int) -> int:
         """

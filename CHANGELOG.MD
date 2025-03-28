@@ -1,7 +1,10 @@
 # Changelog
 
-## v0.14.1 - 2025-03-24
-- Removing NIGHTHAWK module
+## v0.14.1 - 2025-03-28
+- Removed NIGHTHAWK module
+- Reorganized common regex module
+- Added missing STEALC test
+- Various minor fixes and improvements
 
 ## v0.14.0 - 2025-03-18
 - Added Radare2 as the new reverse engineering backend
