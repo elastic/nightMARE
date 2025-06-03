@@ -139,7 +139,7 @@ class Rizin:
                 return self.__rizin.cmdj(f"/zj {pattern} l utf16le")
             case Rizin.PatternType.HEX_PATTERN:
                 return self.__rizin.cmdj(
-                    f"/xj {pattern.replace('?', '.').replace(" ", "")}"
+                    f"/xj {pattern.replace('?', '.').replace(' ', '')}"
                 )
 
     def find_first_pattern(
