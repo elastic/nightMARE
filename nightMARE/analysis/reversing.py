@@ -8,15 +8,14 @@ import pathlib
 import secrets
 import enum
 import hashlib
-
-import r2pipe
+import rzpipe
 
 from nightMARE.core import cast
 
-CACHE: dict[str, Radare2] = {}
+CACHE: dict[str, Rizin] = {}
 
 
-class Radare2:
+class Rizin:
     class PatternType(enum.Enum):
         """
         Enum defining pattern types for searching within a binary.
@@ -32,11 +31,11 @@ class Radare2:
 
     def __del__(self):
         """
-        Destructor that cleans up resources when the Radare2 instance is deleted.
+        Destructor that cleans up resources when the Rizin instance is deleted.
         """
 
-        if self.__is_r2_loaded:
-            self.__radare.cmd("o--")
+        if self.__is_rz_loaded:
+            self.__rizin.cmd("o--")
             self.__tmp_binary_path.unlink()
 
     def __do_analysis(self) -> None:
@@ -45,29 +44,29 @@ class Radare2:
         """
 
         if not self.__is_analyzed:
-            self.__radare.cmd("aaaa")
+            self.__rizin.cmd("aaaa")
             self.__is_analyzed = True
 
-    def __load_r2(self) -> None:
+    def __load_rz(self) -> None:
         """
-        Loads the Radare2 instance with the binary if it hasn't been loaded yet.
+        Loads the Rizin instance with the binary if it hasn't been loaded yet.
         """
 
-        if not self.__is_r2_loaded:
+        if not self.__is_rz_loaded:
             self.__tmp_binary_path.write_bytes(self.__binary)
-            self.__radare = r2pipe.open(str(self.__tmp_binary_path))
-            self.__is_r2_loaded = True
+            self.__rizin = rzpipe.open(str(self.__tmp_binary_path))
+            self.__is_rz_loaded = True
 
     def __init__(self, binary: bytes):
         """
-        Initializes a Radare2 instance with the provided binary data.
+        Initializes a Rizin instance with the provided binary data.
 
         :param binary: The binary data to analyze
         """
 
         self.__binary = binary
         self.__file_info: dict[str, typing.Any] = {}
-        self.__is_r2_loaded = False
+        self.__is_rz_loaded = False
         self.__is_analyzed = False
         self.__tmp_binary_path = pathlib.Path(tempfile.gettempdir()).joinpath(
             secrets.token_hex(24)
@@ -82,8 +81,8 @@ class Radare2:
         :return: A list of dictionaries containing disassembly information
         """
 
-        self.__load_r2()
-        return self.__radare.cmdj(f"aoj {size} @{offset}")
+        self.__load_rz()
+        return self.__rizin.cmdj(f"aoj {size} @ {offset}")
 
     def disassemble_previous_instruction(self, offset: int) -> dict[str, typing.Any]:
         """
@@ -93,7 +92,8 @@ class Radare2:
         :return: A dictionary containing the previous instruction's disassembly info
         """
 
-        self.__load_r2()
+        self.__load_rz()
+        self.__do_analysis()
         return self.disassemble(self.get_previous_instruction_offset(offset), 1)[0]
 
     def disassemble_next_instruction(self, offset: int) -> dict[str, typing.Any]:
@@ -104,7 +104,7 @@ class Radare2:
         :return: A dictionary containing the next instruction's disassembly info
         """
 
-        self.__load_r2()
+        self.__load_rz()
         return self.disassemble(self.get_next_instruction_offset(offset), 1)[0]
 
     @property
@@ -115,13 +115,13 @@ class Radare2:
         :return: A dictionary containing file metadata
         """
 
-        self.__load_r2()
+        self.__load_rz()
         if not self.__file_info:
-            self.__file_info = self.__radare.cmdj("ij")
+            self.__file_info = self.__rizin.cmdj("ij")
         return self.__file_info
 
     def find_pattern(
-        self, pattern: str, pattern_type: Radare2.PatternType
+        self, pattern: str, pattern_type: Rizin.PatternType
     ) -> list[dict[str, typing.Any]]:
         """
         Searches for a pattern in the binary based on the specified type.
@@ -131,19 +131,21 @@ class Radare2:
         :return: A list of offsets where the pattern is found
         """
 
-        self.__load_r2()
+        self.__load_rz()
         match pattern_type:
-            case Radare2.PatternType.STRING_PATTERN:
-                return self.__radare.cmdj(f"/j {pattern}")
-            case Radare2.PatternType.WIDE_STRING_PATTERN:
-                return self.__radare.cmdj(f"/wj {pattern}")
-            case Radare2.PatternType.HEX_PATTERN:
-                return self.__radare.cmdj(f"/xj {pattern.replace('?', '.')}")
+            case Rizin.PatternType.STRING_PATTERN:
+                return self.__rizin.cmdj(f"/zj {pattern} l ascii")
+            case Rizin.PatternType.WIDE_STRING_PATTERN:
+                return self.__rizin.cmdj(f"/zj {pattern} l utf16le")
+            case Rizin.PatternType.HEX_PATTERN:
+                return self.__rizin.cmdj(
+                    f"/xj {pattern.replace('?', '.').replace(" ", "")}"
+                )
 
     def find_first_pattern(
         self,
         patterns: list[str],
-        pattern_type: Radare2.PatternType.HEX_PATTERN,
+        pattern_type: Rizin.PatternType.HEX_PATTERN,
     ) -> int:
         """
         Find the offset of the first matching pattern in a binary
@@ -156,7 +158,7 @@ class Radare2:
 
         for x in patterns:
             if result := self.find_pattern(x, pattern_type):
-                return result[0]["offset"]
+                return result[0]["address"]
         raise RuntimeError("Pattern not found")
 
     def get_data(self, offset: int, size: int | None = None) -> bytes:
@@ -168,7 +170,7 @@ class Radare2:
         :return: The requested data as bytes
         """
 
-        if self.__is_r2_loaded and self.file_info["core"]["format"] != "any":
+        if self.__is_rz_loaded and self.file_info["core"]["format"] != "any":
             return self.get_virtual_data(offset, size)
         return self.get_raw_data(offset, size)
 
@@ -179,9 +181,9 @@ class Radare2:
         :return: A list of dictionaries containing function information
         """
 
-        self.__load_r2()
+        self.__load_rz()
         self.__do_analysis()
-        return self.__radare.cmdj("aflj")
+        return self.__rizin.cmdj("aflj")
 
     def get_raw_data(self, offset: int, size: int | None = None) -> bytes:
         """
@@ -198,7 +200,7 @@ class Radare2:
 
     def get_virtual_data(self, offset: int, size: int | None = None) -> bytes:
         """
-        Retrieves virtual data from the binary using Radare2's memory mapping.
+        Retrieves virtual data from the binary using Rizin's memory mapping.
 
         :param offset: The virtual address to start reading data from
         :param size: The number of bytes to read (optional)
@@ -206,7 +208,7 @@ class Radare2:
         :raise: RuntimeError: If the virtual address is not found in any section
         """
 
-        self.__load_r2()
+        self.__load_rz()
         if not size:
             if not (section_info := self.get_section_info_from_va(offset)):
                 raise RuntimeError(
@@ -214,7 +216,7 @@ class Radare2:
                 )
             size = section_info["vsize"] - (offset - section_info["vaddr"])
 
-        return bytes(self.__radare.cmdj(f"pxj {size} @{offset}"))
+        return bytes(self.__rizin.cmdj(f"pxj {size} @ {offset}"))
 
     def get_function_start(self, offset: int) -> int | None:
         """
@@ -224,9 +226,9 @@ class Radare2:
         :return: The starting address of the function or None if the offset isn't within a function
         """
 
-        self.__load_r2()
+        self.__load_rz()
         self.__do_analysis()
-        return self.__radare.cmdj(f"afoj @ {offset}").get("address", None)
+        return self.__rizin.cmdj(f"afoj @ {offset}").get("address", None)
 
     def get_function_end(self, offset: int) -> int:
         """
@@ -236,9 +238,9 @@ class Radare2:
         :return: The ending address of the function
         """
 
-        self.__load_r2()
+        self.__load_rz()
         self.__do_analysis()
-        function_info = self.__radare.cmdj(f"afij @ {offset}")
+        function_info = self.__rizin.cmdj(f"afij @ {offset}")
         return function_info[0]["offset"] + function_info[0]["size"]
 
     def get_basic_block_end(self, offset: int) -> int:
@@ -249,9 +251,9 @@ class Radare2:
         :return: The ending address of the basic block
         """
 
-        self.__load_r2()
+        self.__load_rz()
         self.__do_analysis()
-        basicblock_info = self.__radare.cmdj(f"afbj. @ {offset}")
+        basicblock_info = self.__rizin.cmdj(f"afbj. @ {offset}")
         return basicblock_info[0]["addr"] + basicblock_info[0]["size"]
 
     def get_function_references(
@@ -264,9 +266,9 @@ class Radare2:
         :return: A list of dictionaries containing reference information
         """
 
-        self.__load_r2()
+        self.__load_rz()
         self.__do_analysis()
-        return self.__radare.cmdj(f"afxj @ {function_offset}")
+        return self.__rizin.cmdj(f"afxj @ {function_offset}")
 
     def get_previous_instruction_offset(self, offset: int) -> int:
         """
@@ -276,8 +278,8 @@ class Radare2:
         :return: The offset of the previous instruction
         """
 
-        self.__load_r2()
-        return self.__radare.cmdj(f"pdj -1 @ {offset}")[0]["offset"]
+        self.__load_rz()
+        return self.__rizin.cmdj(f"pdj -1 @ {offset}")[0]["offset"]
 
     def get_next_instruction_offset(self, offset: int) -> int:
         """
@@ -287,8 +289,8 @@ class Radare2:
         :return: The offset of the next instruction
         """
 
-        self.__load_r2()
-        return self.__radare.cmdj(f"pdj 2 @ {offset}")[1]["offset"]
+        self.__load_rz()
+        return self.__rizin.cmdj(f"pdj 2 @ {offset}")[1]["offset"]
 
     def get_xrefs_from(self, offset: int) -> list:
         """
@@ -298,9 +300,9 @@ class Radare2:
         :return: A list of destination offsets referenced from the given offset
         """
 
-        self.__load_r2()
+        self.__load_rz()
         self.__do_analysis()
-        return [x["to"] for x in self.__radare.cmdj(f"axfj @ {offset}")]
+        return [x["to"] for x in self.__rizin.cmdj(f"axfj @ {offset}")]
 
     def get_xrefs_to(self, offset: int) -> list:
         """
@@ -310,9 +312,9 @@ class Radare2:
         :return: A list of offsets that reference the given offset
         """
 
-        self.__load_r2()
+        self.__load_rz()
         self.__do_analysis()
-        return [x["from"] for x in self.__radare.cmdj(f"axtj @ {offset}")]
+        return [x["from"] for x in self.__rizin.cmdj(f"axtj @ {offset}")]
 
     def get_section(self, name: str) -> bytes:
         """
@@ -322,7 +324,7 @@ class Radare2:
         :return: The section data as bytes
         """
 
-        self.__load_r2()
+        self.__load_rz()
         rsrc_info = self.get_section_info(name)
         return self.get_data(rsrc_info["vaddr"], rsrc_info["vsize"])
 
@@ -334,8 +336,8 @@ class Radare2:
         :return: A dictionary with section info or None if not found
         """
 
-        self.__load_r2()
-        sections = self.__radare.cmdj(f"iSj")
+        self.__load_rz()
+        sections = self.__rizin.cmdj(f"iSj")
         for s in sections:
             if s["name"] == name:
                 return s
@@ -350,8 +352,8 @@ class Radare2:
         :return: A dictionary with section info or None if not found
         """
 
-        self.__load_r2()
-        for section_info in self.__radare.cmdj(f"iSj"):
+        self.__load_rz()
+        for section_info in self.__rizin.cmdj(f"iSj"):
             if (
                 section_info["vaddr"]
                 <= va
@@ -365,11 +367,24 @@ class Radare2:
         Retrieves a string located at the given offset.
 
         :param offset: The offset where the string is located
-        :return: The string data as bytes encoded in UTF-8
+        :return: The string data
         """
 
-        self.__load_r2()
-        return bytes(self.__radare.cmdj(f"psj @ {offset}")["string"], "utf-8")
+        self.__load_rz()
+        return bytes(self.__rizin.cmdj(f"psj ascii @ {offset}")["string"], "utf-8")
+
+    def get_wide_string(self, offset: int) -> bytes:
+        """
+        Retrieves a wide string located at the given offset.
+
+        :param offset: The offset where the wide string is located
+        :return: The wide string data
+        """
+
+        self.__load_rz()
+        return bytes(
+            self.__rizin.cmdj(f"psj utf16le @ {offset}")["string"], "utf-16-le"
+        )
 
     def get_strings(self) -> list[dict[str, typing.Any]]:
         """
@@ -378,9 +393,9 @@ class Radare2:
         :return: A dictionnary describing each strings found in the binary
         """
 
-        self.__load_r2()
+        self.__load_rz()
         self.__do_analysis()
-        return self.__radare.cmdj(f"izj")
+        return self.__rizin.cmdj(f"izj")
 
     def get_u8(self, offset: int) -> int:
         """
@@ -423,12 +438,12 @@ class Radare2:
         return cast.u64(self.get_data(offset, 8))
 
     @staticmethod
-    def get(binary: bytes) -> Radare2:
+    def load(binary: bytes) -> Rizin:
         """
-        Get a Radare2 instance from a binary, using a cache to avoid duplicates.
+        Load a Rizin instance from a binary, using a cache to avoid duplicates.
 
         :param binary: The binary data to load
-        :return: A Radare2 instance
+        :return: A Rizin instance
         """
 
         global CACHE
@@ -437,24 +452,28 @@ class Radare2:
         if x := CACHE.get(hash, None):
             return x
 
-        x = Radare2(binary)
+        x = Rizin(binary)
         CACHE[hash] = x
         return x
 
+    @property
+    def rizin(self) -> rzpipe.open:
+        return self.__rizin
+
     def set_arch(self, arch: str) -> None:
         """
-        Sets the architecture for Radare2 analysis.
+        Sets the architecture for Rizin analysis.
 
         :param arch: The architecture to set (e.g., "x86", "arm")
         """
 
-        self.__radare.cmd(f"e asm.arch = {arch}")
+        self.__rizin.cmd(f"e asm.arch = {arch}")
 
     def set_bits(self, bits: int) -> None:
         """
-        Sets the bit width for Radare2 analysis.
+        Sets the bit width for Rizin analysis.
 
         :param bits: The bit width to set (e.g., 32, 64)
         """
 
-        self.__radare.cmd(f"e asm.bits = {bits}")
+        self.__rizin.cmd(f"e asm.bits = {bits}")
