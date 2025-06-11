@@ -9,8 +9,15 @@ import secrets
 import enum
 import hashlib
 import rzpipe
+import os
+import clr
 
 from nightMARE.core import cast
+
+# Add path to dnlib.dll
+clr.AddReference("")
+from dnlib.DotNet import ModuleDefMD, MethodDef, TypeDef  # type: ignore
+from dnlib.DotNet.Emit import OpCode, OpCodes  # type: ignore
 
 CACHE: dict[str, Rizin] = {}
 
@@ -489,3 +496,72 @@ class Rizin:
         """
 
         self.__rizin.cmd(f"e asm.bits = {bits}")
+
+
+class Dnlib:
+    def load(binary: bytes) -> ModuleDefMD:
+        return ModuleDefMD.Load(binary)
+
+    def find_type_by_name(module: ModuleDefMD, type_name: str) -> TypeDef:
+        for type_def in module.GetTypes():
+            if type_def.FullName == type_name or type_def.Name == type_name:
+                return type_def
+        return None
+
+    # There could be overloading of functions
+    def find_methods_by_name(
+        module: ModuleDefMD, method_name: str, type_def: TypeDef
+    ) -> list[MethodDef]:
+        methods = []
+        if type_def is not None:
+            for method in type_def.Methods:
+                if method_name == method.Name.String:
+                    methods.append(method)
+
+        return methods
+
+    def find_opcode_pattern(
+        module: ModuleDefMD,
+        opcode_pattern: list[str],
+        method: MethodDef = None,
+        type_def: TypeDef = None,
+    ) -> list[tuple[MethodDef, int]]:
+        methods_to_search = []
+        if method:
+            methods_to_search = [method]
+        elif type_def:
+            methods_to_search = type_def.Methods
+        else:
+            methods_to_search = (m for t in module.GetTypes() for m in t.Methods)
+
+        pattern_len = len(opcode_pattern)
+        matches = []
+
+        for method in methods_to_search:
+            if not method.HasBody or not method.Body.HasInstructions:
+                continue
+
+            instructions = method.Body.Instructions
+            if len(instructions) < pattern_len:
+                continue
+
+            for i in range(len(instructions) - pattern_len + 1):
+                for j in range(pattern_len):
+                    if opcode_pattern[j] == "??":
+                        continue
+                    if opcode_pattern[j] != instructions[i + j].OpCode.Name:
+                        break
+                else:
+                    matches.append((method, instructions[i].Offset))
+
+        return matches
+
+    def get_instructions_of_method(method: MethodDef) -> dict[int, tuple[OpCode, any]]:
+        result = {}
+        if not method.HasBody or not method.Body.HasInstructions:
+            return result
+
+        for instr in method.Body.Instructions:
+            result[instr.Offset] = (instr.OpCode, instr.Operand)
+
+        return result
