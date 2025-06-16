@@ -15,7 +15,7 @@ import clr
 from nightMARE.core import cast
 
 # Add path to dnlib.dll
-clr.AddReference("")
+clr.AddReference(r"C:\dev\nightMARE\nightMARE\analysis\dnlib.dll")
 from dnlib.DotNet import ModuleDefMD, MethodDef, TypeDef  # type: ignore
 from dnlib.DotNet.Emit import OpCode, OpCodes  # type: ignore
 
@@ -565,3 +565,76 @@ class Dnlib:
             result[instr.Offset] = (instr.OpCode, instr.Operand)
 
         return result
+
+    def get_ldstr_strings(module: ModuleDefMD) -> list[dict]:
+        """
+        This function iterates through all types and methods in the provided dnlib module,
+        checking each method's body for ldstr instructions. It collects the method and the
+        string value for each ldstr instruction found.
+
+        :param module: The dnlib module to search in.
+        :return: A list of dictionaries with method and value for each ldstr instruction found.
+        """
+
+        results = []
+        for mtype in module.GetTypes():
+            for method in mtype.Methods:
+                if method.HasBody:
+                    for instr in method.Body.Instructions:
+                        if instr.OpCode == OpCodes.Ldstr:
+                            results.append(
+                                {
+                                    "method": method,
+                                    "string": instr.Operand.encode("utf-8"),
+                                }
+                            )
+        return results
+
+    def get_static_field_info(module: ModuleDefMD) -> list[dict]:
+        """
+        This function iterates through all types and methods in the provided dnlib module,
+        collecting the method, field_name, and instruction offset where found. This is used for
+        .NET applications where fields are often set using the Stsfld opcode and set with
+        a string value in previous instruction (ldstr).
+
+        :param module: The dnlib module to search in.
+        :return: A list of dictionaries with method and value for each ldstr instruction found.
+        """
+
+        results = []
+        for mtype in module.GetTypes():
+            for method in mtype.Methods:
+                if method.HasBody:
+                    for instr in method.Body.Instructions:
+                        if instr.OpCode == OpCodes.Stsfld:
+                            results.append(
+                                {
+                                    "method": method,
+                                    "field_name": str(instr.Operand.Name),
+                                    "offset": instr.Offset,
+                                }
+                            )
+        return results
+
+    def get_previous_ldstr_by_offset(method: ModuleDefMD, offset: int) -> bytes | None:
+        """
+        Given a method and an instruction offset, return the previous ldstr value (if any).
+
+        :param method: The method to search in.
+        :param offset: The offset of the instruction to search before.
+        :return: The ldstr value as bytes, or None if not found.
+        """
+
+        instructions = method.Body.Instructions
+        idx = None
+        for i, instr in enumerate(instructions):
+            if instr.Offset == offset:
+                idx = i
+                break
+        if idx is None:
+            return None
+
+        for i in range(idx - 1, -1, -1):
+            if instructions[i].OpCode == OpCodes.Ldstr:
+                return instructions[i].Operand.encode("utf-8")
+        return None
