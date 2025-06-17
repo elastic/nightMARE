@@ -688,3 +688,29 @@ class Dnlib:
             if instructions[i].OpCode == OpCodes.Ldstr:
                 return instructions[i].Operand.encode("utf-8")
         return None
+
+    def get_targeted_field_info(
+        field_info: list[dict], targeted_fields: set
+    ) -> list[dict]:
+        """
+        Filters the previously collected field information to only include those that match the targeted fields.
+
+        :param field_info: A list of dictionaries containing field information.
+        :return: A list of dictionaries containing information about targeted fields.
+        """
+        results = []
+        for field in field_info:
+            string = field["field_name"].encode("utf-8")
+            if string in targeted_fields:
+                results.append(
+                    {
+                        "method": field["method"],
+                        "field_name": string,
+                        "offset": field["offset"],
+                    }
+                )
+
+        if not results:
+            raise RuntimeError("No targeted fields found in the provided module.")
+
+        return results
