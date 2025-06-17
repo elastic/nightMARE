@@ -500,23 +500,51 @@ class Rizin:
 
 class Dnlib:
     def load(binary: bytes) -> ModuleDefMD:
+        """
+        Loads a .NET binary into a ModuleDefMD object for further analysis.
+        It takes a byte array representing the binary and returns a module definition.
+
+        :param binary: The .NET binary data as bytes.
+        :return: A ModuleDefMD object representing the loaded module.
+        """
         return ModuleDefMD.Load(binary)
 
     def find_type_by_name(module: ModuleDefMD, type_name: str) -> TypeDef:
+        """
+        Searches through all types in the provided dnlib module to find a type
+        matching the specified full name or simple name. It returns the first matching type.
+
+        :param module: The dnlib module to search in.
+        :param type_name: The full name or simple name of the type to find.
+        :return: A TypeDef object if found, otherwise None.
+        """
         for type_def in module.GetTypes():
             if type_def.FullName == type_name or type_def.Name == type_name:
                 return type_def
         return None
 
-    # There could be overloading of functions
     def find_methods_by_name(
-        module: ModuleDefMD, method_name: str, type_def: TypeDef
+        module: ModuleDefMD, method_name: str, type_def: TypeDef = None
     ) -> list[MethodDef]:
+        """
+        Searches for methods within a specified TypeDef that match the given
+        method name. If type_def is not specified, searches the entire dnlib module.
+        It collects all matching methods into a list.
+        :param module: The dnlib module containing the type.
+        :param method_name: The name of the method to search for.
+        :param type_def: The TypeDef to search within.
+        :return: A list of MethodDef objects matching the method name.
+        """
         methods = []
         if type_def is not None:
             for method in type_def.Methods:
                 if method_name == method.Name.String:
                     methods.append(method)
+        else:
+            for type_def in module.GetTypes():
+                for method in type_def.Methods:
+                    if method_name == method.Name.String:
+                        methods.append(method)
 
         return methods
 
@@ -525,7 +553,20 @@ class Dnlib:
         opcode_pattern: list[str],
         method: MethodDef = None,
         type_def: TypeDef = None,
+        max_matches: int | None = None,
     ) -> list[tuple[MethodDef, int]]:
+        """
+        Searches for a sequence of opcodes in a dnlib module. Supports searching in a single method,
+        all methods of a type, or all methods in the module. Wildcard '??' matches any opcode.
+        Optimized for performance with flexible match limits.
+
+        :param module: The dnlib module to search in.
+        :param opcode_pattern: A list of opcode names to match.
+        :param method: Optional specific MethodDef to search in.
+        :param type_def: Optional TypeDef to search within.
+        :param max_matches: Max number of matches to return (None for all, or n for n matches).
+        :return: A list of (MethodDef, offset) tuples.
+        """
         methods_to_search = []
         if method:
             methods_to_search = [method]
@@ -553,10 +594,19 @@ class Dnlib:
                         break
                 else:
                     matches.append((method, instructions[i].Offset))
+                    if max_matches and len(matches) >= max_matches:
+                        return matches
 
         return matches
 
     def get_instructions_of_method(method: MethodDef) -> dict[int, tuple[OpCode, any]]:
+        """
+        Retrieves all instructions from a given method's body and organizes them into
+        a dictionary mapping instruction offsets to tuples of opcode and operand.
+
+        :param method: The MethodDef to extract instructions from.
+        :return: A dictionary mapping instruction offsets to (OpCode, Operand) tuples.
+        """
         result = {}
         if not method.HasBody or not method.Body.HasInstructions:
             return result
