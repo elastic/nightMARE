@@ -27,10 +27,9 @@ Example usage: https://www.elastic.co/security-labs/unpacking-icedid
 | `nightmare.malware.stealc`            | Implement stealc algorithms              |
 | `nightmare.malware.xorddos`           | Implement XORDDOS algorithms             |
 
-
 ## Requirements
 - Python >= `3.10` is required.
-- [Radare2 binaries](https://github.com/radareorg/radare2/releases) must be installed and available in the system's PATH environment variable.
+- [Rizin binaries](https://github.com/rizinorg/rizin/releases) must be installed and available in the system's PATH environment variable.
 
 ## Install
 ```bash
