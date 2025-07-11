@@ -1,8 +1,8 @@
 # Changelog
 
-## v0.15.0 - ???
-- ???
+## v0.15.0 - 2025-07-11
 - Replaced Radare2 with Rizin
+- Updated `Latrodectus` algorithms
 
 ## v0.14.1 - 2025-03-28
 - Removed NIGHTHAWK module
