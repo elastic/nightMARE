@@ -29,7 +29,7 @@ Example usage: https://www.elastic.co/security-labs/unpacking-icedid
 
 ## Requirements
 - Python >= `3.10` is required.
-- [Rizin binaries](https://github.com/rizinorg/rizin/releases) must be installed and available in the system's PATH environment variable.
+- [Rizin **v0.8.1**](https://github.com/rizinorg/rizin/releases/tag/v0.8.1) must be installed and available in the system's PATH environment variable.
 
 ## Install
 ```bash

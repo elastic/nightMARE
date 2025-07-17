@@ -152,7 +152,7 @@ class Rizin:
 
         :param pattern: The pattern to search for (string or hex)
         :param pattern_type: The type of pattern (STRING_PATTERN, WIDE_STRING_PATTERN, HEX_PATTERN)
-        :return: An iterable of offsets where the pattern is found
+        :return: The first offset where the pattern is found
         :raise: Raise RuntimeError if pattern is not found
         """
 
@@ -316,7 +316,7 @@ class Rizin:
         self.__do_analysis()
         return [x["to"] for x in self.__rizin.cmdj(f"axfj @ {offset}")]
 
-    def get_xrefs_to(self, offset: int) -> list:
+    def get_xrefs_to(self, offset: int) -> list[int]:
         """
         Retrieves a list of cross-references pointing to the given offset.
 
