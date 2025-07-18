@@ -281,17 +281,6 @@ class Rizin:
         self.__load_rz()
         return self.__rizin.cmdj(f"pdj -1 @ {offset}")[0]["offset"]
 
-    def get_previous_instructions_via_bytes(self, offset: int, input_len: int) -> int:
-        """
-        Retrieves the previous instruction based on number of input bytes, not instructions.
-
-        :param offset: The current instruction offset
-        :param input_len: The number of bytes to look back for the previous instruction
-        :return: The offset of the previous instruction
-        """
-
-        self.__load_rz()
-        return self.__rizin.cmdj(f"pDj - {input_len} @ {offset}")
 
     def get_next_instruction_offset(self, offset: int) -> int:
         """
