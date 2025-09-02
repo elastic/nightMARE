@@ -20,6 +20,7 @@ Example usage: https://www.elastic.co/security-labs/unpacking-icedid
 | `nightmare.malware.deprecated.icedid` | Implement ICEDID algorithms (deprecated) |
 | `nightmare.malware.latrodectus`       | Implement LATRODECTUS algorithms         |
 | `nightmare.malware.lobshot`           | Implement LOBSHOT algorithms             |
+| `nightmare.malware.lumma`             | Implement LUMMA algorithms               |
 | `nightmare.malware.netwire`           | Implement NETWIRE algorithms             |
 | `nightmare.malware.redlinestealer`    | Implement REDLINESTEALER algorithms      |
 | `nightmare.malware.remcos`            | Implement REMCOS algorithms              |

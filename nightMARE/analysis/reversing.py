@@ -1,5 +1,11 @@
 # coding: utf-8
 
+"""
+TODO
+- remove get_data
+- fix modules accordingly
+"""
+
 from __future__ import annotations
 
 import typing
@@ -33,29 +39,10 @@ class Rizin:
         """
         Destructor that cleans up resources when the Rizin instance is deleted.
         """
-
-        if self.__is_rz_loaded:
+        if self.__rizin:
+            self.__rizin.nonblocking = False
             self.__rizin.cmd("o--")
-            self.__tmp_binary_path.unlink()
-
-    def __do_analysis(self) -> None:
-        """
-        Performs analysis on the binary if it hasn't been analyzed yet.
-        """
-
-        if not self.__is_analyzed:
-            self.__rizin.cmd("aaaa")
-            self.__is_analyzed = True
-
-    def __load_rz(self) -> None:
-        """
-        Loads the Rizin instance with the binary if it hasn't been loaded yet.
-        """
-
-        if not self.__is_rz_loaded:
-            self.__tmp_binary_path.write_bytes(self.__binary)
-            self.__rizin = rzpipe.open(str(self.__tmp_binary_path))
-            self.__is_rz_loaded = True
+        self.__tmp_binary_path.unlink()
 
     def __init__(self, binary: bytes):
         """
@@ -66,8 +53,7 @@ class Rizin:
 
         self.__binary = binary
         self.__file_info: dict[str, typing.Any] = {}
-        self.__is_rz_loaded = False
-        self.__is_analyzed = False
+        self.__rizin: rzpipe.open | None = None
         self.__tmp_binary_path = pathlib.Path(tempfile.gettempdir()).joinpath(
             secrets.token_hex(24)
         )
@@ -81,8 +67,7 @@ class Rizin:
         :return: A list of dictionaries containing disassembly information
         """
 
-        self.__load_rz()
-        return self.__rizin.cmdj(f"aoj {size} @ {offset}")
+        return self.rizin.cmdj(f"aoj {size} @ {offset}")
 
     def disassemble_previous_instruction(self, offset: int) -> dict[str, typing.Any]:
         """
@@ -92,8 +77,6 @@ class Rizin:
         :return: A dictionary containing the previous instruction's disassembly info
         """
 
-        self.__load_rz()
-        self.__do_analysis()
         return self.disassemble(self.get_previous_instruction_offset(offset), 1)[0]
 
     def disassemble_next_instruction(self, offset: int) -> dict[str, typing.Any]:
@@ -104,7 +87,6 @@ class Rizin:
         :return: A dictionary containing the next instruction's disassembly info
         """
 
-        self.__load_rz()
         return self.disassemble(self.get_next_instruction_offset(offset), 1)[0]
 
     @property
@@ -115,9 +97,8 @@ class Rizin:
         :return: A dictionary containing file metadata
         """
 
-        self.__load_rz()
         if not self.__file_info:
-            self.__file_info = self.__rizin.cmdj("ij")
+            self.__file_info = self.rizin.cmdj("ij")
         return self.__file_info
 
     def find_pattern(
@@ -131,21 +112,18 @@ class Rizin:
         :return: A list of offsets where the pattern is found
         """
 
-        self.__load_rz()
         match pattern_type:
             case Rizin.PatternType.STRING_PATTERN:
-                return self.__rizin.cmdj(f"/zj {pattern} l ascii")
+                return self.rizin.cmdj(f"/zj {pattern} l ascii")
             case Rizin.PatternType.WIDE_STRING_PATTERN:
-                return self.__rizin.cmdj(f"/zj {pattern} l utf16le")
+                return self.rizin.cmdj(f"/zj {pattern} l utf16le")
             case Rizin.PatternType.HEX_PATTERN:
-                return self.__rizin.cmdj(
+                return self.rizin.cmdj(
                     f"/xj {pattern.replace('?', '.').replace(' ', '')}"
                 )
 
     def find_first_pattern(
-        self,
-        patterns: list[str],
-        pattern_type: Rizin.PatternType.HEX_PATTERN,
+        self, patterns: list[str], pattern_type: Rizin.PatternType
     ) -> int:
         """
         Find the offset of the first matching pattern in a binary
@@ -161,6 +139,17 @@ class Rizin:
                 return result[0]["address"]
         raise RuntimeError("Pattern not found")
 
+    def get_basic_block_end(self, offset: int) -> int:
+        """
+        Retrieves the ending offset of the basic block containing the given offset.
+
+        :param offset: The offset within a basic block
+        :return: The ending address of the basic block
+        """
+
+        basicblock_info = self.rizin.cmdj(f"afbj. @ {offset}")
+        return basicblock_info[0]["addr"] + basicblock_info[0]["size"]
+
     def get_data(self, offset: int, size: int | None = None) -> bytes:
         """
         Retrieves data from the binary, choosing between virtual or raw data based on format.
@@ -170,9 +159,25 @@ class Rizin:
         :return: The requested data as bytes
         """
 
-        if self.__is_rz_loaded and self.file_info["core"]["format"] != "any":
-            return self.get_virtual_data(offset, size)
-        return self.get_raw_data(offset, size)
+        if self.file_info["core"]["format"] != "any":
+            return self.get_data_va(offset, size)
+        return self.get_data_raw(offset, size)
+
+    def get_data_raw(self, offset: int, size: int | None) -> bytes:
+        if size:
+            return self.__binary[offset : offset + size]
+        return self.__binary[offset:]
+
+    def get_data_rva(self, rva: int, size: int | None) -> bytes:
+        return self.get_data_va(self.get_image_base() + rva, size)
+
+    def get_data_va(self, va: int, size: int | None) -> bytes:
+        if not size:
+            if not (section_info := self.get_section_info_from_va(va)):
+                raise RuntimeError(f"Virtual address {va:08x} not found in sections")
+            size = section_info["vsize"] - (va - section_info["vaddr"])
+
+        return bytes(self.rizin.cmdj(f"pxj {size} @ {va}"))
 
     def get_functions(self) -> list[dict[str, typing.Any]]:
         """
@@ -181,54 +186,20 @@ class Rizin:
         :return: A list of dictionaries containing function information
         """
 
-        self.__load_rz()
-        self.__do_analysis()
-        return self.__rizin.cmdj("aflj")
+        return self.rizin.cmdj("aflj")
 
-    def get_raw_data(self, offset: int, size: int | None = None) -> bytes:
-        """
-        Retrieves raw data directly from the binary buffer.
+    def get_image_base(self) -> int:
+        return self.rizin.cmdj("ij")["bin"]["baddr"]
 
-        :param offset: The offset to start reading data from
-        :param size: The number of bytes to read (optional, defaults to rest of binary)
-        :return: The raw data as bytes
-        """
+    def get_image_size(self) -> int:
+        return [
+            int(x["comment"], 16)
+            for x in self.rizin.cmdj("ihj")
+            if x["name"] == "SizeOfImage"
+        ][0]
 
-        if size:
-            return self.__binary[offset : offset + size]
-        return self.__binary[offset:]
-
-    def get_virtual_data(self, offset: int, size: int | None = None) -> bytes:
-        """
-        Retrieves virtual data from the binary using Rizin's memory mapping.
-
-        :param offset: The virtual address to start reading data from
-        :param size: The number of bytes to read (optional)
-        :return: The virtual data as bytes
-        :raise: RuntimeError: If the virtual address is not found in any section
-        """
-
-        self.__load_rz()
-        if not size:
-            if not (section_info := self.get_section_info_from_va(offset)):
-                raise RuntimeError(
-                    f"Virtual address {offset:08x} not found in sections"
-                )
-            size = section_info["vsize"] - (offset - section_info["vaddr"])
-
-        return bytes(self.__rizin.cmdj(f"pxj {size} @ {offset}"))
-
-    def get_function_start(self, offset: int) -> int | None:
-        """
-        Retrieves the starting offset of the function containing the given offset.
-
-        :param offset: The offset within a function
-        :return: The starting address of the function or None if the offset isn't within a function
-        """
-
-        self.__load_rz()
-        self.__do_analysis()
-        return self.__rizin.cmdj(f"afoj @ {offset}").get("address", None)
+    def get_imports(self) -> list[dict[str, typing.Any]]:
+        return self.rizin.cmdj("iij")
 
     def get_function_end(self, offset: int) -> int:
         """
@@ -238,23 +209,8 @@ class Rizin:
         :return: The ending address of the function
         """
 
-        self.__load_rz()
-        self.__do_analysis()
-        function_info = self.__rizin.cmdj(f"afij @ {offset}")
+        function_info = self.rizin.cmdj(f"afij @ {offset}")
         return function_info[0]["offset"] + function_info[0]["size"]
-
-    def get_basic_block_end(self, offset: int) -> int:
-        """
-        Retrieves the ending offset of the basic block containing the given offset.
-
-        :param offset: The offset within a basic block
-        :return: The ending address of the basic block
-        """
-
-        self.__load_rz()
-        self.__do_analysis()
-        basicblock_info = self.__rizin.cmdj(f"afbj. @ {offset}")
-        return basicblock_info[0]["addr"] + basicblock_info[0]["size"]
 
     def get_function_references(
         self, function_offset: int
@@ -266,21 +222,17 @@ class Rizin:
         :return: A list of dictionaries containing reference information
         """
 
-        self.__load_rz()
-        self.__do_analysis()
-        return self.__rizin.cmdj(f"afxj @ {function_offset}")
+        return self.rizin.cmdj(f"afxj @ {function_offset}")
 
-    def get_previous_instruction_offset(self, offset: int) -> int:
+    def get_function_start(self, offset: int) -> int | None:
         """
-        Retrieves the offset of the instruction immediately preceding the given offset.
+        Retrieves the starting offset of the function containing the given offset.
 
-        :param offset: The current instruction offset
-        :return: The offset of the previous instruction
+        :param offset: The offset within a function
+        :return: The starting address of the function or None if the offset isn't within a function
         """
 
-        self.__load_rz()
-        return self.__rizin.cmdj(f"pdj -1 @ {offset}")[0]["offset"]
-
+        return self.rizin.cmdj(f"afoj @ {offset}").get("address", None)
 
     def get_next_instruction_offset(self, offset: int) -> int:
         """
@@ -290,32 +242,17 @@ class Rizin:
         :return: The offset of the next instruction
         """
 
-        self.__load_rz()
-        return self.__rizin.cmdj(f"pdj 2 @ {offset}")[1]["offset"]
+        return self.rizin.cmdj(f"pdj 2 @ {offset}")[1]["offset"]
 
-    def get_xrefs_from(self, offset: int) -> list:
+    def get_previous_instruction_offset(self, offset: int) -> int:
         """
-        Get a list of cross-reference destinations from a specified offset.
+        Retrieves the offset of the instruction immediately preceding the given offset.
 
-        :param offset: The offset to find cross-references from
-        :return: A list of destination offsets referenced from the given offset
-        """
-
-        self.__load_rz()
-        self.__do_analysis()
-        return [x["to"] for x in self.__rizin.cmdj(f"axfj @ {offset}")]
-
-    def get_xrefs_to(self, offset: int) -> list[int]:
-        """
-        Retrieves a list of cross-references pointing to the given offset.
-
-        :param offset: The offset to find references to
-        :return: A list of offsets that reference the given offset
+        :param offset: The current instruction offset
+        :return: The offset of the previous instruction
         """
 
-        self.__load_rz()
-        self.__do_analysis()
-        return [x["from"] for x in self.__rizin.cmdj(f"axtj @ {offset}")]
+        return self.rizin.cmdj(f"pdj -1 @ {offset}")[0]["offset"]
 
     def get_section(self, name: str) -> bytes:
         """
@@ -325,9 +262,11 @@ class Rizin:
         :return: The section data as bytes
         """
 
-        self.__load_rz()
         rsrc_info = self.get_section_info(name)
         return self.get_data(rsrc_info["vaddr"], rsrc_info["vsize"])
+
+    def get_sections(self) -> dict[str, typing.Any]:
+        return self.rizin.cmdj("iSj")
 
     def get_section_info(self, name: str) -> dict[str, typing.Any] | None:
         """
@@ -337,9 +276,7 @@ class Rizin:
         :return: A dictionary with section info or None if not found
         """
 
-        self.__load_rz()
-        sections = self.__rizin.cmdj(f"iSj")
-        for s in sections:
+        for s in self.get_sections():
             if s["name"] == name:
                 return s
         else:
@@ -353,8 +290,7 @@ class Rizin:
         :return: A dictionary with section info or None if not found
         """
 
-        self.__load_rz()
-        for section_info in self.__rizin.cmdj(f"iSj"):
+        for section_info in self.rizin.cmdj(f"iSj"):
             if (
                 section_info["vaddr"]
                 <= va
@@ -371,21 +307,7 @@ class Rizin:
         :return: The string data
         """
 
-        self.__load_rz()
-        return bytes(self.__rizin.cmdj(f"psj ascii @ {offset}")["string"], "utf-8")
-
-    def get_wide_string(self, offset: int) -> bytes:
-        """
-        Retrieves a wide string located at the given offset.
-
-        :param offset: The offset where the wide string is located
-        :return: The wide string data
-        """
-
-        self.__load_rz()
-        return bytes(
-            self.__rizin.cmdj(f"psj utf16le @ {offset}")["string"], "utf-16-le"
-        )
+        return bytes(self.rizin.cmdj(f"psj ascii @ {offset}")["string"], "utf-8")
 
     def get_strings(self) -> list[dict[str, typing.Any]]:
         """
@@ -394,9 +316,7 @@ class Rizin:
         :return: A dictionnary describing each strings found in the binary
         """
 
-        self.__load_rz()
-        self.__do_analysis()
-        return self.__rizin.cmdj(f"izj")
+        return self.rizin.cmdj(f"izj")
 
     def get_u8(self, offset: int) -> int:
         """
@@ -438,6 +358,40 @@ class Rizin:
 
         return cast.u64(self.get_data(offset, 8))
 
+    def get_xrefs_from(self, offset: int) -> list:
+        """
+        Get a list of cross-reference destinations from a specified offset.
+
+        :param offset: The offset to find cross-references from
+        :return: A list of destination offsets referenced from the given offset
+        """
+
+        return [x["to"] for x in self.rizin.cmdj(f"axfj @ {offset}")]
+
+    def get_xrefs_to(self, offset: int) -> list[int]:
+        """
+        Retrieves a list of cross-references pointing to the given offset.
+
+        :param offset: The offset to find references to
+        :return: A list of offsets that reference the given offset
+        """
+
+        return [x["from"] for x in self.rizin.cmdj(f"axtj @ {offset}")]
+
+    def get_wide_string(self, offset: int) -> bytes:
+        """
+        Retrieves a wide string located at the given offset.
+
+        :param offset: The offset where the wide string is located
+        :return: The wide string data
+        """
+
+        return bytes(self.rizin.cmdj(f"psj utf16le @ {offset}")["string"], "utf-16-le")
+
+    @property
+    def is_rz_loaded(self) -> bool:
+        return self.is_rz_loaded
+
     @staticmethod
     def load(binary: bytes) -> Rizin:
         """
@@ -459,6 +413,10 @@ class Rizin:
 
     @property
     def rizin(self) -> rzpipe.open:
+        if not self.__rizin:
+            self.__tmp_binary_path.write_bytes(self.__binary)
+            self.__rizin = rzpipe.open(str(self.__tmp_binary_path))
+            self.__rizin.cmd("aaaa")
         return self.__rizin
 
     def set_arch(self, arch: str) -> None:
@@ -468,7 +426,7 @@ class Rizin:
         :param arch: The architecture to set (e.g., "x86", "arm")
         """
 
-        self.__rizin.cmd(f"e asm.arch = {arch}")
+        self.rizin.cmd(f"e asm.arch = {arch}")
 
     def set_bits(self, bits: int) -> None:
         """
@@ -477,4 +435,4 @@ class Rizin:
         :param bits: The bit width to set (e.g., 32, 64)
         """
 
-        self.__rizin.cmd(f"e asm.bits = {bits}")
+        self.rizin.cmd(f"e asm.bits = {bits}")

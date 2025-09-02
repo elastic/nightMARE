@@ -4,19 +4,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nightMARE-lib"
-version = "0.15.0"
+version = "0.16.0"
 license-files = []
 dependencies = [
     "construct == 2.10.70",
     "dotnetfile == 0.2.4",
-    "fnvhash==0.2.1",
+    "fnvhash ==0.2.1",
     "lief == 0.16.4",
     "pillow == 11.0.0",
     "pycryptodome == 3.21.0",
     "pytest == 8.3.5",
     "requests == 2.32.3",
     "rzpipe == 0.6.2",
-    "unicorn == 2.0.1",
+    "setuptools == 80.9.0", # Required because unicorn still use distutils
+    "unicorn == 2.0.1"
 ]
 
 requires-python = ">=3.10"

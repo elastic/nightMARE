@@ -4,12 +4,15 @@ import pathlib
 import typing
 import requests
 import base64
+import functools
 
 from nightMARE.core.regex import bytes_re
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
 }
+
+PAGE_SIZE = 0x1000
 
 
 def convert_bytes_to_base64_in_dict(data: typing.Any) -> typing.Any:
@@ -119,6 +122,12 @@ def map_files_directory(
         raise RuntimeError("Path is not a directory")
 
     return [(x, function(x)) for x in path.rglob("*")]
+
+
+def page_align(x: int) -> int:
+    if (PAGE_SIZE - 1) & x:
+        return x + (PAGE_SIZE - (x & (PAGE_SIZE - 1)))
+    return x
 
 
 def write_files(directory: pathlib.Path, files: dict[str, bytes]) -> None:
