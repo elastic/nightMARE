@@ -1,8 +1,10 @@
 # Changelog
 
 ## v0.16.0 - 2025-??-??
-- Updated emulation module
 - Added `LUMMA` algorithms 
+- Updated emulation module
+- Reworked regex module, now use factory pattern
+- Various minor fixes and improvements
 
 ## v0.15.0 - 2025-11-07
 - Replaced Radare2 with Rizin

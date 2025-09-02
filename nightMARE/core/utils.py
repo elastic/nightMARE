@@ -4,9 +4,8 @@ import pathlib
 import typing
 import requests
 import base64
-import functools
 
-from nightMARE.core.regex import bytes_re
+from nightMARE.core import regex
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
@@ -92,7 +91,7 @@ def is_base64(s: bytes) -> bool:
     :return: True if the sequence is valid base64, False otherwise
     """
 
-    return bool(bytes_re.BASE64_REGEX.fullmatch(s))
+    return bool(regex.get_regex(regex.RegexOptions.BASE64_REGEX, True).fullmatch(s))
 
 
 def is_url(s: bytes) -> bool:
@@ -103,7 +102,7 @@ def is_url(s: bytes) -> bool:
     :return: True if the sequence is a valid URL, False otherwise
     """
 
-    return bool(bytes_re.URL_REGEX.fullmatch(s))
+    return bool(regex.get_regex(regex.RegexOptions.URL_REGEX, True).fullmatch(s))
 
 
 def map_files_directory(
