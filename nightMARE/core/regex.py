@@ -19,7 +19,7 @@ class RegexOptions(enum.Enum):
 
 MAP = {
     RegexOptions.BASE64_REGEX: r"^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$",
-    RegexOptions.DOMAIN_REGEX: r"([\w.-]+\.[a-zA-Z]{2,}):(\d{1,5})",
+    RegexOptions.DOMAIN_REGEX: r"([\w.-]+\.[a-zA-Z]{2,})(?::(\d{1,5}))?",
     RegexOptions.GUID_REGEX: r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
     RegexOptions.HEX_STRING_REGEX: r"^[0-9a-fA-F]+$",
     RegexOptions.IP_REGEX: r"((\d{1,3}\.){3}(\d{1,3}))",
