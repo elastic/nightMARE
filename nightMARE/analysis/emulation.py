@@ -16,6 +16,7 @@ class WindowsEmulator(object):
     Implements several high-level functions as well as direct access to the unicorn instance.
     """
 
+    @staticmethod
     def require(field_name: str) -> typing.Callable:
         def decorator(f: typing.Callable):
             @functools.wraps(f)
@@ -50,8 +51,8 @@ class WindowsEmulator(object):
         :param args: Arguments to pass to the hook function
         """
 
-        if address in self.__iat_hooks:
-            self.__iat_hooks[address](self, *args)
+        if h := self.__iat_hooks.get(address):
+            h(self, *args)
 
     def __dispatch_iat_hook(self, *args) -> None:
         """
@@ -141,7 +142,7 @@ class WindowsEmulator(object):
 
         self.__unicorn.mem_map(self.__image_base, self.__image_size)
         for section in rz.get_sections():
-            section_virtual_address = section["vaddr"]
+            section_virtual_address: int = section["vaddr"]
             self.__unicorn.mem_write(
                 section_virtual_address,
                 rz.get_data_va(section_virtual_address, section["vsize"]),
