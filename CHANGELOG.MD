@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.16.0 - 2025-??-??
+## v0.16.0 - 2025-12-09
 - Added `LUMMA` algorithms 
 - Added `WARMCOOKIE` algorithms
 - Updated emulation module
