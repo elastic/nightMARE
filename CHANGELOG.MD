@@ -2,6 +2,7 @@
 
 ## v0.16.0 - 2025-??-??
 - Added `LUMMA` algorithms 
+- Added `WARMCOOKIE` algorithms
 - Updated emulation module
 - Reworked regex module, now use factory pattern
 - Various minor fixes and improvements

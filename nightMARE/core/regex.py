@@ -8,6 +8,8 @@ import functools
 class RegexOptions(enum.Enum):
     BASE64_REGEX = enum.auto()
     DOMAIN_REGEX = enum.auto()
+    GUID_REGEX = enum.auto()
+    HEX_STRING_REGEX = enum.auto()
     IP_REGEX = enum.auto()
     IP_PORT_REGEX = enum.auto()
     PORT_REGEX = enum.auto()
@@ -17,7 +19,9 @@ class RegexOptions(enum.Enum):
 
 MAP = {
     RegexOptions.BASE64_REGEX: r"^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$",
-    RegexOptions.DOMAIN_REGEX: r"([\w.-]+\.[a-zA-Z]{2,}):(\d{1,5})",
+    RegexOptions.DOMAIN_REGEX: r"([\w.-]+\.[a-zA-Z]{2,})(?::(\d{1,5}))?",
+    RegexOptions.GUID_REGEX: r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+    RegexOptions.HEX_STRING_REGEX: r"^[0-9a-fA-F]+$",
     RegexOptions.IP_REGEX: r"((\d{1,3}\.){3}(\d{1,3}))",
     RegexOptions.IP_PORT_REGEX: r"((\d{1,3}\.){3}(\d{1,3})):(\d+)",
     RegexOptions.PORT_REGEX: r"^\d{1,5}$",
