@@ -6,6 +6,10 @@ import functools
 
 
 class RegexOptions(enum.Enum):
+    """
+    An enumeration of identifiers for predefined regular expression patterns.
+    """
+
     BASE64_REGEX = enum.auto()
     DOMAIN_REGEX = enum.auto()
     GUID_REGEX = enum.auto()
@@ -32,6 +36,14 @@ MAP = {
 
 @functools.cache
 def get_regex(option: RegexOptions, is_bytes: bool):
+    """
+    Retrieves a cached, compiled regular expression pattern as either string or bytes.
+
+    :param option: The `RegexOptions` enum member specifying the desired pattern.
+    :param is_bytes: If True, returns a compiled bytes pattern; otherwise, returns a string pattern.
+    :return: A compiled regular expression object.
+    """
+
     pattern = MAP[option]
     if is_bytes:
         pattern = pattern.encode("utf-8")

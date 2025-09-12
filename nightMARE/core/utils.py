@@ -16,10 +16,10 @@ PAGE_SIZE = 0x1000
 
 def convert_bytes_to_base64_in_dict(data: typing.Any) -> typing.Any:
     """
-    Recursively converts bytes values to base64 strings within a dictionary.
+    Recursively converts bytes values to base64 strings within a data structure.
 
-    :param data: The dictionary containing values to convert
-    :return: The dictionary with bytes values converted to base64 strings
+    :param data: The data structure (dict, list, etc.) containing values to convert.
+    :return: The data structure with bytes values converted to base64 strings.
     """
 
     t = type(data)
@@ -39,14 +39,14 @@ def download_aux(
     url: str, is_json: bool, *args, **kwargs
 ) -> dict[str, typing.Any] | bytes:
     """
-    Downloads content from a URL, returning JSON or raw bytes based on the is_json flag.
+    Downloads content from a URL, returning JSON or raw bytes.
 
-    :param url: The URL to download from
-    :param is_json: If True, returns JSON as a dictionary; if False, returns raw bytes
-    :param args: Additional positional arguments for requests.get
-    :param kwargs: Additional keyword arguments for requests.get
-    :return: A dictionary if is_json is True, otherwise bytes
-    :raise: RuntimeError: If the download fails with a non-OK status code
+    :param url: The URL to download from.
+    :param is_json: If True, returns JSON; otherwise, returns raw bytes.
+    :param args: Additional positional arguments for `requests.get`.
+    :param kwargs: Additional keyword arguments for `requests.get`.
+    :return: A dictionary if `is_json` is True, otherwise bytes.
+    :exception RuntimeError: If the download fails with a non-OK status code.
     """
 
     if not (response := requests.get(url, headers=HEADERS, *args, **kwargs)).ok:
@@ -59,11 +59,11 @@ def download(url: str, *args, **kwargs) -> bytes:
     """
     Downloads raw content from a URL as bytes.
 
-    :param url: The URL to download from
-    :param args: Additional positional arguments for requests.get
-    :param kwargs: Additional keyword arguments for requests.get
-    :return: The downloaded content as bytes
-    :raise: RuntimeError: If the download fails with a non-OK status code
+    :param url: The URL to download from.
+    :param args: Additional positional arguments for `requests.get`.
+    :param kwargs: Additional keyword arguments for `requests.get`.
+    :return: The downloaded content as bytes.
+    :exception RuntimeError: If the download fails with a non-OK status code.
     """
 
     return typing.cast(bytes, download_aux(url, False, *args, **kwargs))
@@ -73,11 +73,11 @@ def download_json(url: str, *args, **kwargs) -> dict[str, typing.Any]:
     """
     Downloads and parses JSON content from a URL.
 
-    :param url: The URL to download JSON from
-    :param args: Additional positional arguments for requests.get
-    :param kwargs: Additional keyword arguments for requests.get
-    :return: The parsed JSON content as a dictionary
-    :raise: RuntimeError: If the download fails with a non-OK status code
+    :param url: The URL to download JSON from.
+    :param args: Additional positional arguments for `requests.get`.
+    :param kwargs: Additional keyword arguments for `requests.get`.
+    :return: The parsed JSON content as a dictionary.
+    :exception RuntimeError: If the download fails with a non-OK status code.
     """
 
     return typing.cast(dict[str, typing.Any], download_aux(url, True, *args, **kwargs))
@@ -85,10 +85,10 @@ def download_json(url: str, *args, **kwargs) -> dict[str, typing.Any]:
 
 def is_base64(s: bytes) -> bool:
     """
-    Checks if a byte sequence matches a base64 pattern.
+    Checks if a byte sequence appears to be Base64 encoded.
 
-    :param s: The byte sequence to check
-    :return: True if the sequence is valid base64, False otherwise
+    :param s: The byte sequence to check.
+    :return: True if the sequence matches a Base64 pattern, False otherwise.
     """
 
     return bool(regex.get_regex(regex.RegexOptions.BASE64_REGEX, True).fullmatch(s))
@@ -98,8 +98,8 @@ def is_url(s: bytes) -> bool:
     """
     Checks if a byte sequence matches a URL pattern.
 
-    :param s: The byte sequence to check
-    :return: True if the sequence is a valid URL, False otherwise
+    :param s: The byte sequence to check.
+    :return: True if the sequence is a valid URL, False otherwise.
     """
 
     return bool(regex.get_regex(regex.RegexOptions.URL_REGEX, True).fullmatch(s))
@@ -109,12 +109,12 @@ def map_files_directory(
     path: pathlib.Path, function: typing.Callable[[pathlib.Path], typing.Any]
 ) -> list[tuple[pathlib.Path, typing.Any]]:
     """
-    Recursively walks a directory and applies a function to each file.
+    Applies a function to each file in a directory and its subdirectories.
 
-    :param path: The root directory path to start walking from
-    :param function: The function to call on each file, taking a pathlib.Path as input
-    :return: A list of tuples containing each file path and the result of the function
-    :raise: RuntimeError: If the provided path is not a directory
+    :param path: The root directory path to traverse.
+    :param function: The function to apply to each file path.
+    :return: A list of tuples, each containing a file path and the function's result.
+    :exception RuntimeError: If the provided path is not a directory.
     """
 
     if not path.is_dir():
@@ -124,6 +124,13 @@ def map_files_directory(
 
 
 def page_align(x: int) -> int:
+    """
+    Aligns an integer to the next highest page boundary.
+
+    :param x: The integer value to align.
+    :return: The page-aligned integer.
+    """
+
     if (PAGE_SIZE - 1) & x:
         return x + (PAGE_SIZE - (x & (PAGE_SIZE - 1)))
     return x
@@ -131,10 +138,10 @@ def page_align(x: int) -> int:
 
 def write_files(directory: pathlib.Path, files: dict[str, bytes]) -> None:
     """
-    Writes files to a specified directory from a dictionary of filenames and data.
+    Writes a dictionary of files to a specified directory.
 
-    :param directory: The directory where files will be written
-    :param files: A dictionary mapping filenames to their byte content
+    :param directory: The directory where files will be written.
+    :param files: A dictionary mapping filenames to their byte content.
     """
 
     for filename, data in files.items():
