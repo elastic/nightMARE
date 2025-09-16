@@ -54,3 +54,6 @@ py.test
 
 ## How to Contribute
 Contributors must sign a Contributor License Agreement before contributing code to any Elastic repositories.
+
+## License
+nightMARE uses the [Elastic License version 2](LICENSE.md).
