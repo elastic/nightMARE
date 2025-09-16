@@ -1,3 +1,7 @@
+# Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+# or more contributor license agreements. Licensed under the Elastic License;
+# you may not use this file except in compliance with the Elastic License.
+
 # coding: utf-8
 
 import enum
@@ -48,3 +52,4 @@ def get_regex(option: RegexOptions, is_bytes: bool):
     if is_bytes:
         pattern = pattern.encode("utf-8")
     return re.compile(pattern)
+
