@@ -1,5 +1,6 @@
 nightMARE
 Copyright Elasticsearch B.V.
+
 - [certifi 2025.8.3]  
   Licensed under the Mozilla Public License 2.0 (MPL-2.0).
 
