@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.16.1 - 2025-29-09
+- Adding license headers to files
+- Updating notice file
+- Updating pyproject with license and readme
+
 ## v0.16.0 - 2025-12-09
 - Added `LUMMA` algorithms 
 - Added `WARMCOOKIE` algorithms

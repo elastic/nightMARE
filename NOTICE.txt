@@ -1,0 +1,85 @@
+nightMARE
+Copyright Elasticsearch B.V.
+
+- [certifi 2025.8.3]  
+  Licensed under the Mozilla Public License 2.0 (MPL-2.0).
+
+- [charset-normalizer 3.4.3]  
+  Copyright (c) 2025 TAHRI Ahmed R.
+  Licensed under the MIT License.
+
+- [colorama 0.4.6]  
+  Copyright (c) 2010 Jonathan Hartley
+  Licensed under the BSD 3-Clause License. 
+
+- [construct 2.10.70]  
+  Copyright (C) 2009 Tomer Filiba, 2010-2011 Corbin Simpson
+  Licensed under the MIT License.
+
+- [dotnetfile 0.2.4]  
+  Copyright (c) 2017 Palo Alto Networks Unit 42
+  Licensed under the MIT License.
+
+- [exceptiongroup 1.3.0]  
+  Copyright (c) 2022 Alex Grönholm
+  Licensed under the MIT License.
+
+- [fnvhash 0.2.1]  
+  Copyright (c) 2015 Lorenz Schori
+  Licensed under the MIT License.
+
+- [idna 3.10]  
+  Copyright (c) 2013-2025, Kim Davies and contributors. All rights reserved.
+  Licensed under the BSD 3-Clause License.
+
+- [iniconfig 2.1.0]  
+  Copyright (c) 2010 - 2023 Holger Krekel and others
+  Licensed under the MIT License.
+
+- [lief 0.16.4]  
+  Licensed under the Apache License 2.0.
+
+- [packaging 25.0]  
+  Licensed under the Apache License 2.0 or the BSD 2-Clause License.
+
+- [pefile 2024.8.26]  
+  Copyright (c) 2004-2024 Ero Carrera
+  Licensed under the MIT License.
+
+- [Pillow 11.0.0]  
+  Copyright (c) 1997-2011 by Secret Labs AB
+  Copyright (c) 1995-2011 by Fredrik Lundh and contributors
+  Copyright (c) 2010 by Jeffrey A. Clark and contributors
+  Licensed under the MIT-CMU License.
+
+- [pluggy 1.6.0]  
+  Copyright (c) 2015 holger krekel 
+  Licensed under the MIT License.
+
+- [PyCryptodome 3.21.0]  
+  Licensed under the BSD 2-Clause License (some code is in the public domain).
+
+- [pytest 8.3.5]  
+  Copyright (c) 2004 Holger Krekel and others
+  Licensed under the MIT License.
+
+- [requests 2.32.3]  
+  Licensed under the Apache License 2.0.
+
+- [rzpipe 0.6.2]  
+  Copyright (c) 2015 pancake
+  Licensed under the MIT License.
+
+- [tomli 2.2.1]
+  Copyright (c) 2021 Taneli Hukkinen
+  Licensed under the MIT License.
+
+- [typing_extensions 4.15.0]
+  Licensed under the Python Software Foundation License Version 2
+
+- [unicorn 2.0.1]  
+  Licensed under the GNU General Public License (GPL).
+
+- [urllib3 2.5.0]  
+  Copyright (c) 2008-2020 Andrey Petrov and contributors.
+  Licensed under the MIT License.
