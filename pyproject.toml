@@ -9,7 +9,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nightMARE-lib"
 version = "0.16.1"
-license-files = ["https://github.com/elastic/nightMARE/blob/main/LICENSE.md"]
+license = "Elastic-2.0"
+license-files = [
+    "LICENSE.md",
+    "NOTICE.txt",
+]
 readme = "README.md"
 dependencies = [
     "construct == 2.10.70",
