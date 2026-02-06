@@ -364,7 +364,7 @@ class Rizin:
         :return: A list of dictionaries, each describing a found string and its location.
         """
 
-        return self.rizin.cmdj(f"izj")
+        return self.rizin.cmdj(f"izzj")
 
     def get_u8(self, offset: int) -> int:
         """
