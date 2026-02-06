@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.17.1 - 2025-06-02
+- Adding `VIDAR` algorithms
+
 ## v0.16.1 - 2025-29-09
 - Adding license headers to files
 - Updating notice file
