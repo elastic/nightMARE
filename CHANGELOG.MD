@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.17.1 - 2025-06-02
+## v0.17.0 - 2025-10-02
 - Adding `VIDAR` algorithms
 - Modified `get_strings` to include all sections
 

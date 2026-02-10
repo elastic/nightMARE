@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nightMARE-lib"
-version = "0.17.1"
+version = "0.17.0"
 license = "Elastic-2.0"
 license-files = [
     "LICENSE.md",
