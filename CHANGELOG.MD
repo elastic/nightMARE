@@ -2,6 +2,7 @@
 
 ## v0.17.1 - 2025-06-02
 - Adding `VIDAR` algorithms
+- Modified `get_strings` to include all sections
 
 ## v0.16.1 - 2025-29-09
 - Adding license headers to files
