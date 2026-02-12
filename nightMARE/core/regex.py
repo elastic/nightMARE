@@ -23,6 +23,9 @@ class RegexOptions(enum.Enum):
     PORT_REGEX = enum.auto()
     PRINTABLE_STRING_REGEX = enum.auto()
     URL_REGEX = enum.auto()
+    TELEGRAM_PATTERN = enum.auto()
+    TELEGRAM_SHORT_PATTERN = enum.auto()
+    STEAM_PATTERN = enum.auto()
 
 
 MAP = {
@@ -35,6 +38,9 @@ MAP = {
     RegexOptions.PORT_REGEX: r"^\d{1,5}$",
     RegexOptions.PRINTABLE_STRING_REGEX: r"[\x20-\x7E]{4,}",
     RegexOptions.URL_REGEX: r"(https?):\/\/([\w.-]+)(:(\d+))?(\/.+)?",
+    RegexOptions.TELEGRAM_PATTERN: r"^https?://telegram\.me/[\w/-]+$",
+    RegexOptions.TELEGRAM_SHORT_PATTERN: r"^https?://t\.me/[\w/-]+$",
+    RegexOptions.STEAM_PATTERN: r"^https?://steamcommunity\.com/[\w/-]+$",
 }
 
 
@@ -52,4 +58,3 @@ def get_regex(option: RegexOptions, is_bytes: bool):
     if is_bytes:
         pattern = pattern.encode("utf-8")
     return re.compile(pattern)
-
