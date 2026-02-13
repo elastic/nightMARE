@@ -26,6 +26,7 @@ class RegexOptions(enum.Enum):
     TELEGRAM_PATTERN = enum.auto()
     TELEGRAM_SHORT_PATTERN = enum.auto()
     STEAM_PATTERN = enum.auto()
+    MASTODON_PATTERN = enum.auto()
 
 
 MAP = {
@@ -41,6 +42,7 @@ MAP = {
     RegexOptions.TELEGRAM_PATTERN: r"^https?://telegram\.me/[\w/-]+$",
     RegexOptions.TELEGRAM_SHORT_PATTERN: r"^https?://t\.me/[\w/-]+$",
     RegexOptions.STEAM_PATTERN: r"^https?://steamcommunity\.com/[\w/-]+$",
+    RegexOptions.MASTODON_PATTERN: r"^https?://mastodon\.social/[@\w/-]+$",
 }
 
 
