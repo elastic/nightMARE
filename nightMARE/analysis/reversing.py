@@ -274,7 +274,11 @@ class Rizin:
         :return: The starting address of the function, or None if not within a function.
         """
 
-        return self.rizin.cmdj(f"afoj @ {offset}").get("address", None)
+        return (
+            int(result, 16)
+            if (result := self.rizin.cmd(f"afo @ {offset}").strip())
+            else None
+        )
 
     def get_next_instruction_offset(self, offset: int) -> int:
         """
