@@ -3,6 +3,7 @@
 ## v0.17.0 - 2025-10-02
 - Adding `VIDAR` algorithms
 - Modified `get_strings` to include all sections
+- Removed JSON output from `get_function_start`
 
 ## v0.16.1 - 2025-29-09
 - Adding license headers to files
