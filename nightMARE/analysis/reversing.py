@@ -274,6 +274,8 @@ class Rizin:
         :return: The starting address of the function, or None if not within a function.
         """
 
+        # Bug - Inconsistency in JSON parsing with integer conversion using afo command
+        # return rz.rizin.cmd("afo @ {offset}".format(offset=config_addr[0]["address"]))
         return (
             int(result, 16)
             if (result := self.rizin.cmd(f"afo @ {offset}").strip())
