@@ -274,7 +274,13 @@ class Rizin:
         :return: The starting address of the function, or None if not within a function.
         """
 
-        return self.rizin.cmdj(f"afoj @ {offset}").get("address", None)
+        # Bug - Inconsistency in JSON parsing with integer conversion using afo command
+        # return rz.rizin.cmd("afo @ {offset}".format(offset=config_addr[0]["address"]))
+        return (
+            int(result, 16)
+            if (result := self.rizin.cmd(f"afo @ {offset}").strip())
+            else None
+        )
 
     def get_next_instruction_offset(self, offset: int) -> int:
         """
@@ -364,7 +370,7 @@ class Rizin:
         :return: A list of dictionaries, each describing a found string and its location.
         """
 
-        return self.rizin.cmdj(f"izj")
+        return self.rizin.cmdj(f"izzj")
 
     def get_u8(self, offset: int) -> int:
         """
