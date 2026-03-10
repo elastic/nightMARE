@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.17.0 - 2025-10-02
+## v0.17.0 - 2026-10-02
 - Adding `VIDAR` algorithms
 - Modified `get_strings` to include all sections
 - Removed JSON output from `get_function_start`
