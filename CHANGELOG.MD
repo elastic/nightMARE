@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.18.0 - 2026-16-07
+- Added `TELEPUZ` algorithms
+- Fixed `WindowsEmulator.do_call` not pushing shadow space before return address on x64
+- `WindowsEmulator` now initializes `IA32_FS_BASE` and `IA32_GS_BASE` with allocated memory
+- Improved `Rizin` function detection for MSVC PE: analyze functions from `.pdata` `RUNTIME_FUNCTION` entries
+- Added `Rizin.get_data_until_next_xref` to read bytes until the next item with a cross-reference
+- Added `Rizin.get_basic_block_info` and `Rizin.get_basic_block_start`, fixed `Rizin.get_basic_block_end`
+- Fixed race condition in `Rizin.__del__` between rzpipe closing and tmp file deletion
+
 ## v0.17.0 - 2026-10-02
 - Adding `VIDAR` algorithms
 - Modified `get_strings` to include all sections

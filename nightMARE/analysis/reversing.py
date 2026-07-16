@@ -13,6 +13,7 @@ import secrets
 import enum
 import hashlib
 import rzpipe
+import ctypes
 
 from nightMARE.core import cast
 
@@ -33,15 +34,50 @@ class Rizin:
         WIDE_STRING_PATTERN = enum.auto()
         HEX_PATTERN = enum.auto()
 
+    def __analyze_pe_runtime_functions(self):
+        """
+        Forces Rizin to analyze all functions listed in the .pdata RUNTIME_FUNCTION entries,
+        supplementing automatic analysis for PE32/PE64 binaries.
+        """
+
+        class RUNTIME_FUNCTION(ctypes.Structure):
+            _pack_ = 1
+            _fields_ = [
+                ("FunctionStart", ctypes.c_uint32),
+                ("FunctionEnd", ctypes.c_uint32),
+                ("UnwindInfo", ctypes.c_uint32),
+            ]
+
+        format = self.__rizin.cmdj("ij")["core"]["format"]
+        if ("pe32" != format and "pe64" != format) or not self.get_section_info(
+            ".pdata"
+        ):
+            return
+
+        pdata = self.get_section(".pdata")
+        image_base = self.get_image_base()
+        for offset in range(0, len(pdata), ctypes.sizeof(RUNTIME_FUNCTION)):
+            if ctypes.sizeof(RUNTIME_FUNCTION) > len(pdata[offset:]):
+                break
+
+            runtime_function = RUNTIME_FUNCTION.from_buffer_copy(pdata[offset:])
+            if not runtime_function.FunctionStart:
+                break
+
+            self.__rizin.cmd(f"af @ {runtime_function.FunctionStart + image_base}")
+
     def __del__(self):
         """
         Cleans up resources by closing the Rizin instance and deleting the temporary binary file.
         """
 
-        if self.__rizin:
-            self.__rizin.nonblocking = False
-            self.__rizin.cmd("o--")
-        self.__tmp_binary_path.unlink()
+        try:
+            if self.__rizin:
+                self.__rizin.nonblocking = False
+                self.__rizin.cmd("o--")
+        except Exception:
+            pass
+        self.__tmp_binary_path.unlink(missing_ok=True)
 
     def __init__(self, binary: bytes):
         """
@@ -138,16 +174,42 @@ class Rizin:
                 return result[0]["address"]
         raise RuntimeError("Pattern not found")
 
-    def get_basic_block_end(self, offset: int) -> int:
+    def get_basick_block_info(self, offset: int) -> dict[str, typing.Any] | None:
+        """
+        Retrieves the basic block information for the block containing the given offset.
+
+        :param offset: An address contained within a basic block.
+        :return: A dictionary containing the basic block metadata, or None if not found.
+        """
+        if not (basic_blocks := self.rizin.cmdj(f"afbj @ {offset}")):
+            return None
+
+        for bb in basic_blocks:
+            if bb["addr"] <= offset <= bb["addr"] + bb["size"]:
+                return bb
+        return None
+
+    def get_basic_block_end(self, offset: int) -> int | None:
         """
         Finds the end address of the basic block that contains the given offset.
 
         :param offset: An address contained within a basic block.
-        :return: The end address of the basic block.
+        :return: The end address of the basic block, or None if no basic block is found at the offset.
         """
+        if not (bb := self.get_basick_block_info(offset)):
+            return None
+        return bb["addr"] + bb["size"]
 
-        basicblock_info = self.rizin.cmdj(f"afbj. @ {offset}")
-        return basicblock_info[0]["addr"] + basicblock_info[0]["size"]
+    def get_basic_block_start(self, offset: int) -> int | None:
+        """
+        Finds the start address of the basic block that contains the given offset.
+
+        :param offset: An address contained within a basic block.
+        :return: The start address of the basic block, or None if no basic block is found at the offset.
+        """
+        if not (bb := self.get_basick_block_info(offset)):
+            return None
+        return bb["addr"]
 
     def get_data(self, offset: int, size: int | None = None) -> bytes:
         """
@@ -185,6 +247,25 @@ class Rizin:
         """
 
         return self.get_data_va(self.get_image_base() + rva, size)
+
+    def get_data_until_next_xref(self, offset: int) -> bytes:
+        """
+        Reads bytes starting at the given offset until the next address that has a cross-reference pointing to it.
+
+        Useful for determining the size of inline data blobs such as encrypted buffers placed
+        between items in a data section, where the next xref marks the start of the next item.
+
+        :param offset: The virtual address to start reading from.
+        :return: The bytes read up to (not including) the next cross-referenced address.
+        """
+        data = b""
+        ea = offset
+        while True:
+            data += self.get_data(ea, 1)
+            ea += 1
+            if self.get_xrefs_to(ea):
+                break
+        return data
 
     def get_data_va(self, va: int, size: int | None) -> bytes:
         """
@@ -483,6 +564,8 @@ class Rizin:
             self.__tmp_binary_path.write_bytes(self.__binary)
             self.__rizin = rzpipe.open(str(self.__tmp_binary_path))
             self.__rizin.cmd("aaaa")
+            self.__analyze_pe_runtime_functions()
+
         return self.__rizin
 
     def set_arch(self, arch: str) -> None:

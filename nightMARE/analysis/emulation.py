@@ -13,6 +13,9 @@ import unicorn
 from nightMARE.analysis import reversing
 from nightMARE.core import utils
 
+IA32_FS_BASE = 0xC0000100
+IA32_GS_BASE = 0xC0000101
+
 
 class WindowsEmulator(object):
     """
@@ -121,6 +124,11 @@ class WindowsEmulator(object):
             unicorn.UC_ARCH_X86, unicorn.UC_MODE_32 if is_x86 else unicorn.UC_MODE_64
         )
 
+        self.__fs_base_address = self.allocate_memory(0x1000)
+        self.unicorn.msr_write(IA32_FS_BASE, self.__fs_base_address)
+        self.__gs_base_address = self.allocate_memory(0x1000)
+        self.unicorn.msr_write(IA32_GS_BASE, self.__gs_base_address)
+
     def __init_iat(self, pe: bytes) -> None:
         """
         Parses a PE file's import table and populates the IAT mapping in memory.
@@ -193,10 +201,16 @@ class WindowsEmulator(object):
         """
         Emulates a function call by pushing the return address and jumping to the target address.
 
+        On x64, allocates the 32-byte shadow space required by the Windows x64 calling convention
+        before pushing the return address.
+
         :param address: The address of the function to call.
         :param return_address: The address to return to after the function completes.
         """
 
+        if not self.__is_x86:
+            for _ in range(4):
+                self.push(0)
         self.push(return_address)
         self.ip = address
 
@@ -233,6 +247,24 @@ class WindowsEmulator(object):
         """
 
         self.__unicorn.mem_unmap(address, utils.page_align(size))
+
+    @property
+    def fs(self) -> int:
+        """
+        Gets the base address of the FS segment register memory region.
+
+        :return: The allocated FS base address.
+        """
+        return self.__fs_base_address
+
+    @property
+    def gs(self) -> int:
+        """
+        Gets the base address of the GS segment register memory region.
+
+        :return: The allocated GS base address.
+        """
+        return self.__gs_base_address
 
     @property
     @require("is_pe_loaded")
