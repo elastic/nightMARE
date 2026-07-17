@@ -98,7 +98,7 @@ class WindowsEmulator(object):
                     return utils.PAGE_SIZE
 
             else:
-                if (memory_region[0] - memory_regions[i - 1][1]) >= size:
+                if (memory_region[0] - memory_regions[i - 1][1] - 1) >= size:
                     return memory_regions[i - 1][1] + 1
 
         return memory_regions[-1][1] + 1

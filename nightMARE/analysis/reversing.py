@@ -174,7 +174,7 @@ class Rizin:
                 return result[0]["address"]
         raise RuntimeError("Pattern not found")
 
-    def get_basick_block_info(self, offset: int) -> dict[str, typing.Any] | None:
+    def get_basic_block_info(self, offset: int) -> dict[str, typing.Any] | None:
         """
         Retrieves the basic block information for the block containing the given offset.
 
@@ -196,7 +196,7 @@ class Rizin:
         :param offset: An address contained within a basic block.
         :return: The end address of the basic block, or None if no basic block is found at the offset.
         """
-        if not (bb := self.get_basick_block_info(offset)):
+        if not (bb := self.get_basic_block_info(offset)):
             return None
         return bb["addr"] + bb["size"]
 
@@ -207,7 +207,7 @@ class Rizin:
         :param offset: An address contained within a basic block.
         :return: The start address of the basic block, or None if no basic block is found at the offset.
         """
-        if not (bb := self.get_basick_block_info(offset)):
+        if not (bb := self.get_basic_block_info(offset)):
             return None
         return bb["addr"]
 
@@ -251,9 +251,6 @@ class Rizin:
     def get_data_until_next_xref(self, offset: int) -> bytes:
         """
         Reads bytes starting at the given offset until the next address that has a cross-reference pointing to it.
-
-        Useful for determining the size of inline data blobs such as encrypted buffers placed
-        between items in a data section, where the next xref marks the start of the next item.
 
         :param offset: The virtual address to start reading from.
         :return: The bytes read up to (not including) the next cross-referenced address.
