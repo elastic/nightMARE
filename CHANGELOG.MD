@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.19.0 - 2026-31-08
+- Added `REVSTEALER` algorithms
+- Added `Rizin.collect_call_parameters` to collect register values at given call site by walking backwards
+
 ## v0.18.0 - 2026-16-07
 - Added `TELEPUZ` algorithms
 - Fixed `WindowsEmulator.do_call` not pushing shadow space before return address on x64

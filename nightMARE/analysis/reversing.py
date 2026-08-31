@@ -93,6 +93,75 @@ class Rizin:
             secrets.token_hex(24)
         )
 
+    def collect_call_parameters(
+        self,
+        call_site_address: int,
+        registers: tuple[str, ...],
+        mnemonics: tuple[str, ...] = ("lea", "mov"),
+        max_steps: int = 50,
+    ) -> dict[str, int] | None:
+        """
+        Collects the values of specified registers at a given call site by walking backwards
+        through the instructions to find specific instructions that load the register arguments.
+
+        :param call_site_address: The address of the call instruction to the target function.
+        :param registers: A set of register names to collect values for (e.g., {"rcx", "rdx"}).
+        :param mnemonics: An optional set of instruction mnemonics to consider (default is {"lea", "mov"}).
+        :param max_steps: The maximum number of instructions to walk backwards (default is 50).
+        :return: A dictionary mapping register names to their collected values, or None if not all registers could be resolved.
+        """
+
+        parameters: dict[str, int] = {r: 0 for r in registers}
+        reg_values: dict[str, int] = {}
+        pending: dict[str, str] = {}
+        ea = call_site_address
+
+        for _ in range(max_steps):
+            if all(parameters.values()):
+                break
+            insn = self.disassemble_previous_instruction(ea)
+            ea = insn["addr"]
+
+            if insn["mnemonic"] not in mnemonics:
+                continue
+
+            first_operand = insn["opex"]["operands"][0]
+            second_operand = insn["opex"]["operands"][1]
+            if first_operand["type"] != "reg":
+                continue
+
+            if second_operand["type"] == "imm":
+                val = second_operand["value"]
+            elif (
+                second_operand["type"] == "mem" and second_operand.get("base") == "rip"
+            ):
+                val = second_operand["disp"] + insn["addr"] + insn["size"]
+            elif second_operand["type"] == "mem":
+                val = second_operand["disp"]
+            elif second_operand["type"] == "reg":
+                src = second_operand["value"]
+                if src in reg_values:
+                    val = reg_values[src]
+                else:
+                    pending[src] = first_operand["value"]
+                    continue
+            else:
+                continue
+
+            dest = first_operand["value"]
+            reg_values[dest] = val
+
+            if dest in pending:
+                dep_dest = pending.pop(dest)
+                reg_values[dep_dest] = val
+                if dep_dest in parameters and not parameters[dep_dest]:
+                    parameters[dep_dest] = val
+
+            if dest in parameters and not parameters[dest]:
+                parameters[dest] = val
+
+        return parameters if all(parameters.values()) else None
+
     def disassemble(self, offset: int, size: int) -> list[dict[str, typing.Any]]:
         """
         Disassembles a specified number of instructions starting from a given offset.
