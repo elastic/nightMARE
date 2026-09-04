@@ -136,7 +136,7 @@ class WindowsEmulator(object):
         :param pe: A bytes object representing the PE file.
         """
 
-        rz = reversing.Rizin.load(pe)
+        rz = reversing.Rizin.load(pe, analysis_level=0)
         address = self.allocate_memory(0x10000)
         for import_ in rz.get_imports():
             self.__iat["{}!{}".format(import_["libname"], import_["name"]).lower()] = (
@@ -156,17 +156,16 @@ class WindowsEmulator(object):
         :param pe: A bytes object representing the PE file.
         """
 
-        rz = reversing.Rizin.load(pe)
+        rz = reversing.Rizin.load(pe, analysis_level=0)
         self.__image_base = rz.get_image_base()
         self.__image_size = rz.get_image_size()
 
         self.__unicorn.mem_map(self.__image_base, self.__image_size)
         for section in rz.get_sections():
-            section_virtual_address: int = section["vaddr"]
-            self.__unicorn.mem_write(
-                section_virtual_address,
-                rz.get_data_va(section_virtual_address, section["vsize"]),
-            )
+            section_offset = section["paddr"]
+            section_size = section["size"]
+            if content := pe[section_offset : section_offset + section_size]:
+                self.__unicorn.mem_write(section["vaddr"], content)
 
     def __print_iat_hook(self, address: int) -> None:
         """

@@ -17,7 +17,7 @@ import ctypes
 
 from nightMARE.core import cast
 
-CACHE: dict[str, Rizin] = {}
+CACHE: dict[tuple[str, int], Rizin] = {}
 
 
 class Rizin:
@@ -79,14 +79,20 @@ class Rizin:
             pass
         self.__tmp_binary_path.unlink(missing_ok=True)
 
-    def __init__(self, binary: bytes):
+    def __init__(self, binary: bytes, analysis_level: int = 4):
         """
         Initializes a Rizin instance to analyze the provided binary data.
 
         :param binary: The binary content to be analyzed.
+        :param analysis_level: Number of `a` characters in Rizin's analysis
+        command. Use 0 to skip analysis; otherwise use 2-4.
         """
 
+        if analysis_level not in (0, 2, 3, 4):
+            raise ValueError("Analysis level must be 0 or between 2 and 4")
+
         self.__binary = binary
+        self.__analysis_level = analysis_level
         self.__file_info: dict[str, typing.Any] = {}
         self.__rizin: rzpipe.open | None = None
         self.__tmp_binary_path = pathlib.Path(tempfile.gettempdir()).joinpath(
@@ -600,22 +606,24 @@ class Rizin:
         return self.is_rz_loaded
 
     @staticmethod
-    def load(binary: bytes) -> Rizin:
+    def load(binary: bytes, analysis_level: int = 4) -> Rizin:
         """
         Loads a binary for analysis, using a cache to avoid re-analyzing the same file.
 
         :param binary: The binary content to load.
+        :param analysis_level: Number of `a` characters in Rizin's analysis
+        command. Use 0 to skip analysis; otherwise use 2-4.
         :return: A Rizin instance for the given binary.
         """
 
         global CACHE
 
-        hash = hashlib.sha256(binary).hexdigest()
-        if x := CACHE.get(hash, None):
+        cache_key = (hashlib.sha256(binary).hexdigest(), analysis_level)
+        if x := CACHE.get(cache_key, None):
             return x
 
-        x = Rizin(binary)
-        CACHE[hash] = x
+        x = Rizin(binary, analysis_level)
+        CACHE[cache_key] = x
         return x
 
     @property
@@ -629,8 +637,9 @@ class Rizin:
         if not self.__rizin:
             self.__tmp_binary_path.write_bytes(self.__binary)
             self.__rizin = rzpipe.open(str(self.__tmp_binary_path))
-            self.__rizin.cmd("aaaa")
-            self.__analyze_pe_runtime_functions()
+            if self.__analysis_level:
+                self.__rizin.cmd("a" * self.__analysis_level)
+                self.__analyze_pe_runtime_functions()
 
         return self.__rizin
 
